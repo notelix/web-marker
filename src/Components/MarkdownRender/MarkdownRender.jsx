@@ -7,6 +7,9 @@ import Button from "@material-ui/core/Button";
 import {parseMarkdown} from "../../utils/markdown";
 import Marker from "../../lib/classes/Marker";
 import showDialog from "../../utils/showDialog";
+import {v4 as uuid} from "uuid";
+
+const demoMultiRangeMode = window.location.hash.indexOf("multi-range") >= 0;
 
 const LOCALSTORAGE_HIGHLIGHTS_KEY = "web-marker-highlights";
 
@@ -76,6 +79,9 @@ class MarkdownRender extends React.Component {
     }
 
     saveHighlightsToLocalStorage() {
+        if (demoMultiRangeMode) {
+            return;
+        }
         const toSave = {};
         Object.keys(this.highlights).forEach(key => {
             toSave[key] = {...this.highlights[key], id: undefined}
@@ -87,10 +93,16 @@ class MarkdownRender extends React.Component {
         rootElement: document.body,
         eventHandler: {
             onHighlightClick: (context, element) => {
-                this.selectedHighlightId = context.id;
-                this.setUserSelectionByRange(
-                    this.mapHighlightIdToRange[this.selectedHighlightId]
-                );
+                if (demoMultiRangeMode) {
+                    // click again to delete in multi range mode
+                    this.marker.unpaint(this.highlights[context.id]);
+                    delete this.highlights[context.id];
+                } else {
+                    this.selectedHighlightId = context.id;
+                    this.setUserSelectionByRange(
+                        this.mapHighlightIdToRange[this.selectedHighlightId]
+                    );
+                }
             },
             onHighlightHoverStateChange: (context, element, hovering) => {
                 if (hovering) {
@@ -149,22 +161,54 @@ class MarkdownRender extends React.Component {
         const {pageX, pageY} = e;
         window.pointerPos = {x: pageX, y: pageY};
     };
-    mouseupListener = () => {
-        const selection = window.getSelection();
-        if (!selection.toString()) {
-            this.setState({hideHighlightButtons: true})
-            return;
+    mouseupListener = (e) => {
+        this.handleMouseUp(e, false);
+    }
+
+    handleMouseUp = (e, calledRecursively = false) => {
+        console.log("@e", e);
+        try {
+            const selection = window.getSelection();
+            if (!selection.toString() && !demoMultiRangeMode) {
+                this.setState({hideHighlightButtons: true})
+                return;
+            }
+            if (!selection.rangeCount) {
+                return null;
+            }
+            this.selectedHighlightId = null;
+            let range = selection.getRangeAt(0);
+            this.setUserSelectionByRange(range);
+            if (demoMultiRangeMode) {
+                const serialized = this.marker.serializeRange(
+                    this.state.userSelection.range
+                );
+                if (!serialized) {
+                    return;
+                }
+                this.paint(serialized);
+            }
+        } finally {
+            if (demoMultiRangeMode) {
+                const selection = window.getSelection();
+                if (selection.isCollapsed && !this.isHighlightElement(e.target)) {
+                    selection.modify("move", "forward", "character");
+                    selection.modify("extend", "backward", "word");
+                    selection.modify("move", "backward", "character");
+                    selection.modify("extend", "forward", "word");
+                    if (!calledRecursively) {
+                        this.handleMouseUp(e, true)
+                    }
+                }
+                setTimeout(() => {
+                    this.setState({hideHighlightButtons: Object.keys(this.highlights).length === 0})
+                });
+            }
         }
-        if (!selection.rangeCount) {
-            return null;
-        }
-        this.selectedHighlightId = null;
-        let range = selection.getRangeAt(0);
-        this.setUserSelectionByRange(range);
     };
 
     componentDidMount() {
-        if (localStorage[LOCALSTORAGE_HIGHLIGHTS_KEY]) {
+        if (!demoMultiRangeMode && localStorage[LOCALSTORAGE_HIGHLIGHTS_KEY]) {
             this.highlights = this.loadHighlightsFromLocalStorage();
             Object.keys(this.highlights).forEach((id) => {
                 this.paint(this.highlights[id]);
@@ -183,6 +227,55 @@ class MarkdownRender extends React.Component {
     }
 
     render() {
+        let markdown = parseMarkdown(this.props.markdown);
+
+        const [top, left, width] = findProperTopLeftAndWidth(
+            (this.state.userSelection || {}).clientRect
+        );
+        return (
+            <div className="markdown-render-root">
+                {!!this.state.userSelection && !this.state.hideHighlightButtons && (
+                    <div
+                        className="highlight-button-wrapper web-marker-black-listed-element"
+                        style={{
+                            left: `${left}px`,
+                            width: `${width}px`,
+                            top: top + "px",
+                        }}
+                    >
+                        <div className="highlight-buttons">
+                            {this.renderHighlightButtons()}
+                        </div>
+                    </div>
+                )}
+
+                <div className="content-wrapper">
+
+                    <span>abc</span>
+                    <span className="web-marker-black-listed-element">bl<span>ackli</span>sted</span>
+                    <span>vcxdsf</span>
+                    <span>qwerthgf</span>
+
+                    <Content
+                        options={{overrides: makeMarkdownOverrides(this.props)}}
+                        {...this.props}
+                    >
+                        {markdown.content}
+                    </Content>
+                </div>
+            </div>
+        );
+    }
+
+    renderHighlightButtons() {
+        if (demoMultiRangeMode) {
+            return this.renderHighlightButtonsMultiRangeMode();
+        } else {
+            return this.renderHighlightButtonsDefault();
+        }
+    }
+
+    renderHighlightButtonsDefault() {
         const doHighlight = () => {
             const serialized = this.marker.serializeRange(
                 this.state.userSelection.range
@@ -225,53 +318,55 @@ class MarkdownRender extends React.Component {
             });
         };
 
-        let markdown = parseMarkdown(this.props.markdown);
-
-        const [top, left, width] = findProperTopLeftAndWidth(
-            (this.state.userSelection || {}).clientRect
-        );
-        return (
-            <div className="markdown-render-root">
-                {!!this.state.userSelection && !this.state.hideHighlightButtons && (
-                    <div
-                        className="highlight-button-wrapper web-marker-black-listed-element"
-                        style={{
-                            left: `${left}px`,
-                            width: `${width}px`,
-                            top: top + "px",
-                        }}
-                    >
-                        <div className="highlight-buttons">
-                            {!this.selectedHighlightId && <div onMouseDown={doHighlight} className="highlight-button">
-                                <span>Highlight</span>
-                            </div>}
-                            {!!this.selectedHighlightId &&
-                            <div onMouseDown={doDelete} className="highlight-button del-button">
-                                <span>Delete</span>
-                            </div>}
-                            <div onMouseDown={doAnnotate} className="highlight-button">
-                                <span>Annotate</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="content-wrapper">
-
-                    <span>abc</span>
-                    <span className="web-marker-black-listed-element">bl<span>ackli</span>sted</span>
-                    <span>vcxdsf</span>
-                    <span>qwerthgf</span>
-
-                    <Content
-                        options={{overrides: makeMarkdownOverrides(this.props)}}
-                        {...this.props}
-                    >
-                        {markdown.content}
-                    </Content>
-                </div>
+        return <>
+            {!this.selectedHighlightId && <div onMouseDown={doHighlight} className="highlight-button">
+                <span>Highlight</span>
+            </div>}
+            {!!this.selectedHighlightId &&
+            <div onMouseDown={doDelete} className="highlight-button del-button">
+                <span>Delete</span>
+            </div>}
+            <div onMouseDown={doAnnotate} className="highlight-button">
+                <span>Annotate</span>
             </div>
-        );
+        </>;
+    }
+
+    renderHighlightButtonsMultiRangeMode() {
+        const onSubmit = () => {
+            const data = {id: uuid(), ranges: []};
+            Object.keys(this.highlights).forEach(key => {
+                data.ranges.push(this.highlights[key])
+            })
+            alert("selection created: " + JSON.stringify(data, null, 4));
+            onDiscard();
+        }
+        const onDiscard = () => {
+            Object.keys(this.highlights).forEach(key => {
+                this.marker.unpaint(this.highlights[key]);
+                delete this.highlights[key];
+            });
+            this.setState({
+                hideHighlightButtons: true,
+            });
+        }
+        return <>
+            <div className="highlight-button" onMouseDown={onSubmit}>
+                <span>Submit</span>
+            </div>
+            <div className="highlight-button" onMouseDown={onDiscard}>
+                <span>Discard</span>
+            </div>
+        </>;
+    }
+
+    isHighlightElement(element) {
+        try {
+            console.log("@element.tagName", element.tagName);
+            return element.tagName === 'HIGHLIGHT';
+        } catch {
+            return false;
+        }
     }
 }
 
