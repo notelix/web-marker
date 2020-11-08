@@ -1,0 +1,13 @@
+.idea
+public
+src
+*.md
+*.txt
+*.jpg
+*.png
+*.ico
+*.tgz
+test
+dist
+config-overrides.js
+manifest.json

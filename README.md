@@ -1,7 +1,5 @@
 # web-marker
 
-(work in progress)
-
 ![logo](./public/logo.svg)
 
 A web page highlighter that features
@@ -18,7 +16,14 @@ npm start
 ```
 
 # How to use
+
+```
+npm install @kevinwang15/web-marker
+```
+
 ```javascript
+import {Marker} from "@kevinwang15/web-marker"
+
 const marker = new Marker({
     rootElement: document.body,
     eventHandler: {
@@ -54,8 +59,7 @@ document.addEventListener('mouseup', (e) => {
 ```
 
 # How to build library
-TODO
-
-# Roadmap
-* a more comprehensive demo
-* a better API
+```
+npm run build-lib
+npm pack
+```
