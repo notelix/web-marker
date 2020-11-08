@@ -1,0 +1,61 @@
+# web-marker
+
+(work in progress)
+
+![logo](./public/logo.svg)
+
+A web page highlighter that features
+* accurate serialization and deserialization which makes it possible to correctly restore the highlights, even if part of the web page has changed
+* nested highlighting
+* no dependency
+
+# How to run
+```bash
+git clone https://github.com/KevinWang15/web-marker
+cd web-marker
+npm i
+npm start
+```
+
+# How to use
+```javascript
+const marker = new Marker({
+    rootElement: document.body,
+    eventHandler: {
+        onHighlightClick: (context, element) => {
+            marker.unpaint(context.serializedRange);
+        },
+        onHighlightHoverStateChange: (context, element, hovering) => {
+            if (hovering) {
+                element.style.backgroundColor = "#f0d8ff";
+            } else {
+                element.style.backgroundColor = "";
+            }
+        }
+    },
+    highlightPainter: {
+        paintHighlight: (context, element) => {
+            element.style.color = "red";
+        }
+    }
+});
+
+marker.addEventListeners();
+
+document.addEventListener('mouseup', (e) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) {
+        return null;
+    }
+    const serialized = marker.serializeRange(selection.getRangeAt(0));
+    console.log(JSON.stringify(serialized));
+    marker.paint(serialized);
+})
+```
+
+# How to build library
+TODO
+
+# Roadmap
+* a more comprehensive demo
+* a better API
