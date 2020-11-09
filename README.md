@@ -16,14 +16,6 @@ npm start
 ```
 
 # How to use
-
-Create a `.npmrc` file with the following content
-```
-@notelix:registry=https://npm.pkg.github.com
-```
-
-then
-
 ```
 npm install @notelix/web-marker
 ```
