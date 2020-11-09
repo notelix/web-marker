@@ -1,6 +1,6 @@
 # web-marker
 
-![logo](./public/logo.svg)
+![logo](https://raw.githubusercontent.com/notelix/web-marker/develop/public/logo.svg)
 
 A web page highlighter that features
 * accurate serialization and deserialization which makes it possible to correctly restore the highlights, even if part of the web page has changed

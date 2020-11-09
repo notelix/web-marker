@@ -1,6 +1,6 @@
 {
   "name": "@notelix/web-marker",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "a web page highlighter",
   "main": "./build/web-marker.js",
   "scripts": {
@@ -12,6 +12,11 @@
   },
   "dependencies": {
     "uuid": "^8.3.0"
+  },
+  "homepage": "https://github.com/notelix/web-marker",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/notelix/web-marker"
   },
   "devDependencies": {
     "@types/uuid": "^8.3.0",
@@ -31,8 +36,16 @@
     "webpack-bundle-analyzer": "^3.9.0",
     "yaml": "^1.10.0"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "web",
+    "marker",
+    "text",
+    "highlight",
+    "annotation",
+    "selection",
+    "range"
+  ],
+  "author": "Ke Wang <453587854@qq.com>",
   "license": "MIT",
   "browserslist": {
     "production": [
