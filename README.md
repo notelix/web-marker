@@ -9,7 +9,7 @@ A web page highlighter that features
 
 # How to run
 ```bash
-git clone https://github.com/KevinWang15/web-marker
+git clone https://github.com/notelix/web-marker
 cd web-marker
 npm i
 npm start
@@ -18,11 +18,11 @@ npm start
 # How to use
 
 ```
-npm install @kevinwang15/web-marker
+npm install @notelix/web-marker
 ```
 
 ```javascript
-import {Marker} from "@kevinwang15/web-marker"
+import {Marker} from "@notelix/web-marker"
 
 const marker = new Marker({
     rootElement: document.body,

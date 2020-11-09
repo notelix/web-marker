@@ -1,5 +1,5 @@
 {
-  "name": "@kevinwang15/web-marker",
+  "name": "@notelix/web-marker",
   "version": "0.0.1",
   "description": "a web page highlighter",
   "main": "./build/web-marker.js",
