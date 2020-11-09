@@ -1,6 +1,6 @@
 {
   "name": "@notelix/web-marker",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "a web page highlighter",
   "main": "./build/web-marker.js",
   "scripts": {
