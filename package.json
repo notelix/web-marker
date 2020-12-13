@@ -1,12 +1,13 @@
 {
   "name": "@notelix/web-marker",
-  "version": "0.0.4",
+  "version": "0.0.7",
   "description": "a web page highlighter",
   "main": "./build/web-marker.js",
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
     "build-lib": "BUILD_TARGET=lib react-app-rewired build",
+    "prepublish": "NO_BUNDLE_ANALYSER=true npm run build-lib",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject"
   },

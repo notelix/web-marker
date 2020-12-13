@@ -158,6 +158,7 @@ class Marker {
         const range = this.deserializeRange(serializedRange);
         this.paintRange(range, {id});
         Marker.clearSelection();
+        return ({range});
     }
 
     public unpaint(serializedRange: SerializedRange) {

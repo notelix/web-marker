@@ -1,7 +1,9 @@
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const path = require("path");
 module.exports = function override(config, env) {
-    config.plugins.push(new BundleAnalyzerPlugin());
+    if (process.env.NO_BUNDLE_ANALYSER !== "true") {
+        config.plugins.push(new BundleAnalyzerPlugin());
+    }
     if (process.env.BUILD_TARGET === "lib") {
         config.entry = [
             path.resolve(process.cwd(), "src", "libroot.js")
