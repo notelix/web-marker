@@ -5,7 +5,7 @@ import EventHandlerContext from "./Context";
 import Context from "./Context";
 import SerializedRange from "./SerializedRange";
 
-const HighlightClassName = "web-marker-highlight";
+const HighlightTagName = "web-marker-highlight";
 const HighlightBlacklistedElementClassName = "web-marker-black-listed-element";
 const AttributeNameHighlightId = "highlight-id";
 const CharsToKeepForPrecedingAndSucceeding = 8;
@@ -71,7 +71,7 @@ class Marker {
 
     private static resolveHighlightElements(highlightId: string): HTMLElement[] {
         let elements: HTMLElement[] = [];
-        for (let item of Array.from(document.getElementsByClassName(HighlightClassName))) {
+        for (let item of Array.from(document.getElementsByTagName(HighlightTagName))) {
             if (item.getAttribute(AttributeNameHighlightId) === highlightId) {
                 elements.push(item as HTMLElement);
             }
@@ -514,8 +514,7 @@ class Marker {
     }
 
     private convertTextNodeToHighlightElement(word: Node) {
-        const decoratedElement = document.createElement("highlight");
-        decoratedElement.className = HighlightClassName;
+        const decoratedElement = document.createElement(HighlightTagName);
         decoratedElement.innerHTML = this.getInnerText(word);
         word.parentElement?.insertBefore(decoratedElement, word.nextSibling);
         word.parentElement?.removeChild(word);

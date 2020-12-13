@@ -1,4 +1,3 @@
-import "./index.css";
 import React from "react";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import testMd from "!raw-loader!./test.md";
