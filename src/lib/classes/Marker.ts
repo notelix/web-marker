@@ -108,7 +108,7 @@ class Marker {
         const s = textNode.textContent || "";
         let cumulative = 0;
         for (let i = 0; i < s.length; i++) {
-            while (!Marker.normalizeText(s.substr(i, 1))) {
+            while (i < s.length && !Marker.normalizeText(s.substr(i, 1))) {
                 // omit whitespaces
                 i++;
             }
@@ -171,6 +171,7 @@ class Marker {
 
     public deserializeRange(serializedRange: SerializedRange) {
         document.head.appendChild(blackListedElementStyle);
+        debugger;
         try {
             return this._deserializeRange(serializedRange);
         } finally {
