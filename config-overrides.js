@@ -17,7 +17,6 @@ module.exports = function override(config, env) {
             libraryExport: 'default'
         }
 
-        console.log("@config.optimization", config.optimization);
         delete config.optimization["splitChunks"];
         delete config.optimization["runtimeChunk"];
         config.externals = ["react", "react-dom"];

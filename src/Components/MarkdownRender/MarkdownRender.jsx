@@ -167,7 +167,6 @@ class MarkdownRender extends React.Component {
     }
 
     handleMouseUp = (e, calledRecursively = false) => {
-        console.log("@e", e);
         try {
             const selection = window.getSelection();
             if (!selection.toString() && !demoMultiRangeMode) {
@@ -363,7 +362,6 @@ class MarkdownRender extends React.Component {
 
     isHighlightElement(element) {
         try {
-            console.log("@element.tagName", element.tagName);
             return element.tagName === 'HIGHLIGHT';
         } catch {
             return false;

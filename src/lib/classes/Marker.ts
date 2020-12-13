@@ -250,14 +250,11 @@ class Marker {
     };
 
     public addEventListeners() {
-        console.log("@adding")
         this.rootElement.addEventListener('click', this.clickListener);
         this.rootElement.addEventListener('mouseover', this.mouseoverListener)
     }
 
     public removeEventListeners() {
-        console.log("@removing")
-
         this.rootElement.removeEventListener('click', this.clickListener);
         this.rootElement.removeEventListener('mouseover', this.mouseoverListener)
     }
@@ -269,8 +266,6 @@ class Marker {
     }
 
     private _deserializeRange(serializedRange: SerializedRange) {
-        console.log("deserializeRange");
-
         this.state.idToSerializedRange[serializedRange.id] = serializedRange;
         const rootText = this.getNormalizedInnerText(this.rootElement)
         const targetOffset = rootText.indexOf(serializedRange.preceding + serializedRange.selected + serializedRange.succeeding);
