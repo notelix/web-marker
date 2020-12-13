@@ -126,13 +126,10 @@ class MarkdownRender extends React.Component {
     });
 
     paint(serializedRange) {
-        const range = this.marker.deserializeRange(serializedRange);
-        this.marker.paintRange(range, {id: serializedRange.id});
+        const {range} = this.marker.paint(serializedRange);
         this.highlights[serializedRange.id] = serializedRange;
         this.mapHighlightIdToRange[serializedRange.id] = range;
         this.saveHighlightsToLocalStorage();
-        Marker.clearSelection();
-        return ({range});
     }
 
     setUserSelectionByRange(range) {
