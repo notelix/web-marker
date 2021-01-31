@@ -1,4 +1,5 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import Markdown from "markdown-to-jsx";
 import makeMarkdownOverrides from "./overrides";
 import "./MarkdownRender.scss";
@@ -232,18 +233,18 @@ class MarkdownRender extends React.Component {
         return (
             <div className="markdown-render-root">
                 {!!this.state.userSelection && !this.state.hideHighlightButtons && (
-                    <div
-                        className="highlight-button-wrapper web-marker-black-listed-element"
+                    ReactDOM.createPortal(<div
+                        className="highlight-button-wrapper"
                         style={{
                             left: `${left}px`,
                             width: `${width}px`,
                             top: top + "px",
                         }}
                     >
-                        <div className="highlight-buttons">
+                        <div className="highlight-buttons web-marker-black-listed-element">
                             {this.renderHighlightButtons()}
                         </div>
-                    </div>
+                    </div>, document.body)
                 )}
 
                 <div className="content-wrapper">
@@ -317,7 +318,7 @@ class MarkdownRender extends React.Component {
 
         return <>
             {!this.selectedHighlightId && <div onMouseDown={doHighlight} className="highlight-button">
-                <span>Highlight</span>
+                <span>H1`ighlight</span>
             </div>}
             {!!this.selectedHighlightId &&
             <div onMouseDown={doDelete} className="highlight-button del-button">
