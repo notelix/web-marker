@@ -78,7 +78,7 @@ if (zoneAlphaDesign(kvm, vdu, web) - southbridge) {
 }
 ```
 
-![img](/img.jpg)
+![img](https://raw.githubusercontent.com/notelix/web-marker/develop/public/logo.svg)
 
 Genus _sit_ movit tulerunt fortius qui, in imagine igitur concussit, est
 fluitantia findit; precor sed. Reliquit perforat Tartara, inter caput facitis

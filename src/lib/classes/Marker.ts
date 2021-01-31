@@ -120,7 +120,6 @@ class Marker {
         if (cumulative === normalizedOffset) {
             return s.length;
         }
-        debugger;
         throw new Error("failed to get real offset");
     }
 
@@ -171,7 +170,6 @@ class Marker {
 
     public deserializeRange(serializedRange: SerializedRange) {
         document.head.appendChild(blackListedElementStyle);
-        debugger;
         try {
             return this._deserializeRange(serializedRange);
         } finally {
@@ -195,7 +193,7 @@ class Marker {
                 word.splitText(range.endOffset)
                 execute(this.convertTextNodeToHighlightElement(word));
 
-                resolve();
+                resolve(null);
                 return;
             }
 
@@ -220,7 +218,7 @@ class Marker {
                 }
             })
 
-            resolve();
+            resolve(null);
             return;
         }).then(() => {
             this.paintHighlights(id);
