@@ -234,14 +234,14 @@ class MarkdownRender extends React.Component {
             <div className="markdown-render-root">
                 {!!this.state.userSelection && !this.state.hideHighlightButtons && (
                     ReactDOM.createPortal(<div
-                        className="highlight-button-wrapper"
+                        className="highlight-button-wrapper web-marker-black-listed-element"
                         style={{
                             left: `${left}px`,
                             width: `${width}px`,
                             top: top + "px",
                         }}
                     >
-                        <div className="highlight-buttons web-marker-black-listed-element">
+                        <div className="highlight-buttons">
                             {this.renderHighlightButtons()}
                         </div>
                     </div>, document.body)
@@ -318,7 +318,7 @@ class MarkdownRender extends React.Component {
 
         return <>
             {!this.selectedHighlightId && <div onMouseDown={doHighlight} className="highlight-button">
-                <span>H1`ighlight</span>
+                <span>Highlight</span>
             </div>}
             {!!this.selectedHighlightId &&
             <div onMouseDown={doDelete} className="highlight-button del-button">

@@ -427,6 +427,10 @@ class Marker {
                 ptr = ptr?.nextSibling || null;
             }
             while (ptr?.nextSibling) {
+                if (Marker.isBlackListedElementNode(ptr?.nextSibling)) {
+                    ptr = ptr.nextSibling;
+                    continue;
+                }
                 const candidate = this.findFirstChildTextNode(ptr.nextSibling);
                 if (candidate) {
                     return candidate;
