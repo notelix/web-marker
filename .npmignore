@@ -12,3 +12,5 @@ dist
 config-overrides.js
 manifest.json
 design
+build/logo.svg
+tsconfig.json
