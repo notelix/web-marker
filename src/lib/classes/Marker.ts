@@ -1,4 +1,4 @@
-import {v4 as uuid} from "uuid";
+import makeid from "../../utils/makeid";
 import EventHandler from "./EventHandler";
 import HighlightPainter from "./HighlightPainter";
 import EventHandlerContext from "./Context";
@@ -285,7 +285,7 @@ class Marker {
     }
 
     private _serializeRange(range: Range): SerializedRange | null {
-        const id = uuid();
+        const id = makeid();
         const selection = Marker.convertRangeToSelection(range);
 
         let selected = Marker.normalizeText(selection.toString());

@@ -8,7 +8,7 @@ import Button from "@material-ui/core/Button";
 import {parseMarkdown} from "../../utils/markdown";
 import Marker from "../../lib/classes/Marker";
 import showDialog from "../../utils/showDialog";
-import {v4 as uuid} from "uuid";
+import makeid from "../../utils/makeid";
 
 const demoMultiRangeMode = window.location.hash.indexOf("multi-range") >= 0;
 
@@ -332,7 +332,7 @@ class MarkdownRender extends React.Component {
 
     renderHighlightButtonsMultiRangeMode() {
         const onSubmit = () => {
-            const data = {id: uuid(), ranges: []};
+            const data = {id: makeid(), ranges: []};
             Object.keys(this.highlights).forEach(key => {
                 data.ranges.push(this.highlights[key])
             })

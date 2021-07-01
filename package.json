@@ -12,7 +12,6 @@
     "eject": "react-app-rewired eject"
   },
   "dependencies": {
-    "uuid": "^8.3.0"
   },
   "homepage": "https://github.com/notelix/web-marker",
   "repository": {
@@ -20,7 +19,6 @@
     "url": "https://github.com/notelix/web-marker"
   },
   "devDependencies": {
-    "@types/uuid": "^8.3.0",
     "@material-ui/core": "^4.11.0",
     "bulma": "^0.9.1",
     "lodash-es": "^4.17.15",
