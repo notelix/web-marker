@@ -226,14 +226,24 @@ class Marker {
     }
 
     clickListener = (e: Event) => {
-        const id = (<HTMLElement>e.target)?.getAttribute(AttributeNameHighlightId);
+        if (!e.target || !(e.target instanceof HTMLElement)) {
+            return
+        }
+
+        const target = e.target as HTMLElement;
+        const id = target.getAttribute(AttributeNameHighlightId);
         if (id && this.eventHandler.onHighlightClick) {
-            this.eventHandler.onHighlightClick(this.buildContext(id), <HTMLElement>e.target)
+            this.eventHandler.onHighlightClick(this.buildContext(id), target)
         }
     };
 
     mouseoverListener = (e: Event) => {
-        let newHoverId = (<HTMLElement>e.target)?.getAttribute(AttributeNameHighlightId);
+        if (!e.target || !(e.target instanceof HTMLElement)) {
+            return
+        }
+
+        const target = e.target as HTMLElement;
+        let newHoverId = target?.getAttribute(AttributeNameHighlightId);
         if (this.state.lastHoverId === newHoverId) {
             return;
         }
