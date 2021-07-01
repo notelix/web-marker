@@ -1,8 +1,8 @@
 interface SerializedRange {
-    id: string
-    preceding: string
-    selected: string
-    succeeding: string
+  id: string;
+  preceding: string;
+  selected: string;
+  succeeding: string;
 }
 
 export default SerializedRange;
