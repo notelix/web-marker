@@ -14,3 +14,4 @@ manifest.json
 design
 build/logo.svg
 tsconfig.json
+tsconfig.gen-dts.json

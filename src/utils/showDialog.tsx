@@ -6,7 +6,7 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
 
-function getDialogButtons(dialogInstance, context) {
+function getDialogButtons(dialogInstance: any, context: any) {
   if (dialogInstance.DialogButtons) {
     return dialogInstance.DialogButtons(context);
   } else {
@@ -19,10 +19,10 @@ function getDialogButtons(dialogInstance, context) {
   }
 }
 
-function showDialog(DialogClass, props) {
+function showDialog(DialogClass: any, props: any) {
   return new Promise((resolve) => {
     const dialogRoot = document.createElement("div");
-    let clearUp = null;
+    let clearUp = null as any;
     document.body.appendChild(dialogRoot);
 
     const Root = () => {
@@ -31,13 +31,13 @@ function showDialog(DialogClass, props) {
 
       const dialogInstance = React.createElement(DialogClass, {
         ...(props || {}),
-        ref: (instance) => {
+        ref: (instance: any) => {
           if (!instance || dialogButtons) {
             return;
           }
           setDialogButtons(
             getDialogButtons(instance, {
-              closeDialog: (resolution) => {
+              closeDialog: (resolution: any) => {
                 resolve(resolution);
                 setOpen(false);
                 clearUp();

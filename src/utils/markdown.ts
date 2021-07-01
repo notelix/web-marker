@@ -1,6 +1,6 @@
 import yaml from "yaml";
 
-function parseMarkdown(text) {
+function parseMarkdown(text: any) {
   const lines = text.trim().split("\n");
   let inMeta = false;
 

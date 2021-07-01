@@ -6,7 +6,7 @@ module.exports = function override(config, env) {
     }
     if (process.env.BUILD_TARGET === "lib") {
         config.entry = [
-            path.resolve(process.cwd(), "src", "libroot.js")
+            path.resolve(process.cwd(), "src", "libroot.ts")
         ]
 
         config.output = {
