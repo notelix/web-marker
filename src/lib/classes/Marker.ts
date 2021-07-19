@@ -613,7 +613,6 @@ class Marker {
 
   private buildContext(highlightId: string): EventHandlerContext {
     return {
-      id: highlightId,
       serializedRange: this.state.uidToSerializedRange[highlightId],
       marker: this,
     };

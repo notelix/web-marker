@@ -95,10 +95,10 @@ class MarkdownRender extends React.Component {
       onHighlightClick: (context, element) => {
         if (demoMultiRangeMode) {
           // click again to delete in multi range mode
-          this.marker.unpaint(this.highlights[context.id]);
-          delete this.highlights[context.id];
+          this.marker.unpaint(this.highlights[context.serializedRange.uid]);
+          delete this.highlights[context.serializedRange.uid];
         } else {
-          this.selectedHighlightId = context.id;
+          this.selectedHighlightId = context.serializedRange.uid;
           this.setUserSelectionByRange(
             this.mapHighlightIdToRange[this.selectedHighlightId]
           );
@@ -127,8 +127,8 @@ class MarkdownRender extends React.Component {
 
   paint(serializedRange) {
     const { range } = this.marker.paint(serializedRange);
-    this.highlights[serializedRange.id] = serializedRange;
-    this.mapHighlightIdToRange[serializedRange.id] = range;
+    this.highlights[serializedRange.uid] = serializedRange;
+    this.mapHighlightIdToRange[serializedRange.uid] = range;
     this.saveHighlightsToLocalStorage();
   }
 
@@ -290,7 +290,7 @@ class MarkdownRender extends React.Component {
       this.paint(serialized);
 
       this.setState({ hideHighlightButtons: true });
-      return { id: serialized.uid };
+      return { uid: serialized.uid };
     };
 
     const doDelete = () => {
@@ -309,7 +309,7 @@ class MarkdownRender extends React.Component {
     const doAnnotate = () => {
       if (!this.selectedHighlightId) {
         const result = doHighlight();
-        this.selectedHighlightId = result.id;
+        this.selectedHighlightId = result.uid;
       }
       let selectedHighlightId = this.selectedHighlightId;
       showDialog(AnnotationDialog, {
