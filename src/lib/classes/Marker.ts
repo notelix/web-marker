@@ -169,7 +169,53 @@ class Marker {
     }
     const id = serializedRange.id;
     const range = this.deserializeRange(serializedRange);
-    this.paintRange(range, { id });
+    if (!range.collapsed) {
+      const execute = (element: HTMLElement) => {
+        element.setAttribute(AttributeNameHighlightId, id);
+      };
+
+      new Promise((resolve) => {
+        if (range.startContainer === range.endContainer) {
+          // special case
+          const word = (<Text>range.startContainer).splitText(
+            range.startOffset
+          );
+          word.splitText(range.endOffset);
+          execute(this.convertTextNodeToHighlightElement(word));
+
+          resolve(null);
+          return;
+        }
+
+        const toPaint = [];
+        let ptr = (<Text>range.startContainer).splitText(
+          range.startOffset
+        ) as Node | null;
+        toPaint.push(ptr);
+
+        while (true) {
+          ptr = this.findNextTextNodeInDomTree(ptr);
+          if (ptr === range.endContainer) {
+            break;
+          }
+          toPaint.push(ptr);
+        }
+
+        (<Text>range.endContainer).splitText(range.endOffset);
+        toPaint.push(range.endContainer);
+
+        toPaint.forEach((item) => {
+          if (item) {
+            execute(this.convertTextNodeToHighlightElement(item));
+          }
+        });
+
+        resolve(null);
+        return;
+      }).then(() => {
+        this.paintHighlights(id);
+      });
+    }
     Marker.clearSelection();
     return { range };
   }
@@ -189,56 +235,6 @@ class Marker {
     } finally {
       document.head.removeChild(blackListedElementStyle);
     }
-  }
-
-  public paintRange(range: Range, { id }: { id: string }) {
-    if (range.collapsed) {
-      return;
-    }
-
-    const execute = (element: HTMLElement) => {
-      element.setAttribute(AttributeNameHighlightId, id);
-    };
-
-    new Promise((resolve) => {
-      if (range.startContainer === range.endContainer) {
-        // special case
-        const word = (<Text>range.startContainer).splitText(range.startOffset);
-        word.splitText(range.endOffset);
-        execute(this.convertTextNodeToHighlightElement(word));
-
-        resolve(null);
-        return;
-      }
-
-      const toPaint = [];
-      let ptr = (<Text>range.startContainer).splitText(
-        range.startOffset
-      ) as Node | null;
-      toPaint.push(ptr);
-
-      while (true) {
-        ptr = this.findNextTextNodeInDomTree(ptr);
-        if (ptr === range.endContainer) {
-          break;
-        }
-        toPaint.push(ptr);
-      }
-
-      (<Text>range.endContainer).splitText(range.endOffset);
-      toPaint.push(range.endContainer);
-
-      toPaint.forEach((item) => {
-        if (item) {
-          execute(this.convertTextNodeToHighlightElement(item));
-        }
-      });
-
-      resolve(null);
-      return;
-    }).then(() => {
-      this.paintHighlights(id);
-    });
   }
 
   clickListener = (e: Event) => {
