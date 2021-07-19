@@ -73,7 +73,7 @@ class MarkdownRender extends React.Component {
   loadHighlightsFromLocalStorage() {
     const data = JSON.parse(localStorage[LOCALSTORAGE_HIGHLIGHTS_KEY]);
     Object.keys(data).forEach((key) => {
-      data[key].id = key;
+      data[key].uid = key;
     });
     return data;
   }
@@ -290,7 +290,7 @@ class MarkdownRender extends React.Component {
       this.paint(serialized);
 
       this.setState({ hideHighlightButtons: true });
-      return { id: serialized.id };
+      return { id: serialized.uid };
     };
 
     const doDelete = () => {

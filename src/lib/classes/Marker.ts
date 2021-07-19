@@ -8,7 +8,7 @@ import SerializedRange from "./SerializedRange";
 const HighlightTagName = "web-marker-highlight";
 const HighlightBlacklistedElementClassName = "web-marker-black-listed-element";
 const AttributeNameHighlightId = "highlight-id";
-const CharsToKeepForPrecedingAndSucceeding = 8;
+const CharsToKeepForTextBeforeAndTextAfter = 8;
 
 const blackListedElementStyle = document.createElement("style");
 blackListedElementStyle.innerText = `.${HighlightBlacklistedElementClassName} {display:none;};`;
@@ -48,7 +48,7 @@ class Marker {
 
   state = {
     lastHoverId: "",
-    idToSerializedRange: {} as { [key: string]: SerializedRange },
+    uidToSerializedRange: {} as { [key: string]: SerializedRange },
   };
 
   constructor({
@@ -154,24 +154,24 @@ class Marker {
 
   public serializeRange(
     range: Range,
-    options = { id: null }
+    options = { uid: null }
   ): SerializedRange | null {
     document.head.appendChild(blackListedElementStyle);
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
-      const id = options?.id || makeid();
+      const uid = options?.uid || makeid();
       const selection = Marker.convertRangeToSelection(range);
 
-      let selected = Marker.normalizeText(selection.toString());
-      if (selected) {
-        let preceding = "";
-        let succeeding = "";
+      let text = Marker.normalizeText(selection.toString());
+      if (text) {
+        let textBefore = "";
+        let textAfter = "";
 
         {
-          // find preceding
-          preceding =
-            preceding +
+          // find textBefore
+          textBefore =
+            textBefore +
             Marker.normalizeText(
               this.getInnerText(range.startContainer).substr(
                 0,
@@ -180,56 +180,56 @@ class Marker {
             );
 
           let ptr = range.startContainer as Node | null;
-          while (preceding.length < CharsToKeepForPrecedingAndSucceeding) {
+          while (textBefore.length < CharsToKeepForTextBeforeAndTextAfter) {
             ptr = this.findPreviousTextNodeInDomTree(ptr);
             if (!ptr) {
               // already reached the front
               break;
             }
-            preceding =
-              Marker.normalizeText((ptr as any).textContent) + preceding;
+            textBefore =
+              Marker.normalizeText((ptr as any).textContent) + textBefore;
           }
-          if (preceding.length > CharsToKeepForPrecedingAndSucceeding) {
-            preceding = preceding.substr(
-              preceding.length - CharsToKeepForPrecedingAndSucceeding
+          if (textBefore.length > CharsToKeepForTextBeforeAndTextAfter) {
+            textBefore = textBefore.substr(
+              textBefore.length - CharsToKeepForTextBeforeAndTextAfter
             );
           }
         }
 
         {
-          // find succeeding
-          succeeding =
-            succeeding +
+          // find textAfter
+          textAfter =
+            textAfter +
             Marker.normalizeText(
               this.getInnerText(range.endContainer).substr(range.endOffset)
             );
 
           let ptr = range.endContainer as Node | null;
-          while (succeeding.length < CharsToKeepForPrecedingAndSucceeding) {
+          while (textAfter.length < CharsToKeepForTextBeforeAndTextAfter) {
             ptr = this.findNextTextNodeInDomTree(ptr);
             if (!ptr) {
               // already reached the end
               break;
             }
-            succeeding =
-              succeeding + Marker.normalizeText((ptr as any).textContent);
+            textAfter =
+              textAfter + Marker.normalizeText((ptr as any).textContent);
           }
 
-          if (succeeding.length > CharsToKeepForPrecedingAndSucceeding) {
-            succeeding = succeeding.substr(
+          if (textAfter.length > CharsToKeepForTextBeforeAndTextAfter) {
+            textAfter = textAfter.substr(
               0,
-              CharsToKeepForPrecedingAndSucceeding
+              CharsToKeepForTextBeforeAndTextAfter
             );
           }
         }
 
-        this.state.idToSerializedRange[id] = {
-          id,
-          preceding,
-          selected,
-          succeeding,
+        this.state.uidToSerializedRange[uid] = {
+          uid,
+          textBefore,
+          text,
+          textAfter,
         };
-        return this.state.idToSerializedRange[id];
+        return this.state.uidToSerializedRange[uid];
       }
 
       return null;
@@ -242,11 +242,11 @@ class Marker {
     if (!serializedRange) {
       return;
     }
-    const id = serializedRange.id;
+    const uid = serializedRange.uid;
     const range = this.deserializeRange(serializedRange);
     if (!range.collapsed) {
       const execute = (element: HTMLElement) => {
-        element.setAttribute(AttributeNameHighlightId, id);
+        element.setAttribute(AttributeNameHighlightId, uid);
       };
 
       new Promise((resolve) => {
@@ -288,7 +288,7 @@ class Marker {
         resolve(null);
         return;
       }).then(() => {
-        this.paintHighlights(id);
+        this.paintHighlights(uid);
       });
     }
     Marker.clearSelection();
@@ -296,7 +296,7 @@ class Marker {
   }
 
   public unpaint(serializedRange: SerializedRange) {
-    const id = serializedRange.id;
+    const id = serializedRange.uid;
 
     for (let element of Marker.resolveHighlightElements(id)) {
       Marker.unpaintElement(element);
@@ -306,29 +306,29 @@ class Marker {
   public deserializeRange(serializedRange: SerializedRange) {
     document.head.appendChild(blackListedElementStyle);
     try {
-      this.state.idToSerializedRange[serializedRange.id] = serializedRange;
+      this.state.uidToSerializedRange[serializedRange.uid] = serializedRange;
       const rootText = this.getNormalizedInnerText(this.rootElement);
       const targetOffset = rootText.indexOf(
-        serializedRange.preceding +
-          serializedRange.selected +
-          serializedRange.succeeding
+        serializedRange.textBefore +
+          serializedRange.text +
+          serializedRange.textAfter
       );
       if (targetOffset < 0) {
         throw new Error("failed to deserialize");
       }
 
       let start = this.findElementAtOffset(this.rootElement, targetOffset);
-      start = this.forwardOffset(start, serializedRange.preceding.length);
+      start = this.forwardOffset(start, serializedRange.textBefore.length);
       let end = this.findElementAtOffset(
         this.rootElement,
         targetOffset +
           (
-            serializedRange.preceding +
-            serializedRange.selected +
-            serializedRange.succeeding
+            serializedRange.textBefore +
+            serializedRange.text +
+            serializedRange.textAfter
           ).length
       );
-      end = this.backwardOffset(end, serializedRange.succeeding.length);
+      end = this.backwardOffset(end, serializedRange.textAfter.length);
 
       const range = document.createRange();
       range.setStart(
@@ -614,7 +614,7 @@ class Marker {
   private buildContext(highlightId: string): EventHandlerContext {
     return {
       id: highlightId,
-      serializedRange: this.state.idToSerializedRange[highlightId],
+      serializedRange: this.state.uidToSerializedRange[highlightId],
       marker: this,
     };
   }
