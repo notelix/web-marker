@@ -154,7 +154,7 @@ class Marker {
 
   public serializeRange(
     range: Range,
-    options = { uid: null }
+    options:{uid?:string} = { uid: undefined }
   ): SerializedRange | null {
     document.head.appendChild(blackListedElementStyle);
 
