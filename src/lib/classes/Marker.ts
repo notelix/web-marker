@@ -152,12 +152,15 @@ class Marker {
     return selection;
   }
 
-  public serializeRange(range: Range): SerializedRange | null {
+  public serializeRange(
+    range: Range,
+    options = { id: null }
+  ): SerializedRange | null {
     document.head.appendChild(blackListedElementStyle);
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
-      const id = makeid();
+      const id = options?.id || makeid();
       const selection = Marker.convertRangeToSelection(range);
 
       let selected = Marker.normalizeText(selection.toString());
@@ -567,9 +570,8 @@ class Marker {
         if (Marker.isBlackListedElementNode(root.childNodes[i])) {
           continue;
         }
-        const childSize = this.getNormalizedInnerText(
-          root.childNodes[i]
-        ).length;
+        const childSize = this.getNormalizedInnerText(root.childNodes[i])
+          .length;
         cumulativeOffset += childSize;
         if (cumulativeOffset < offset) {
           continue;
