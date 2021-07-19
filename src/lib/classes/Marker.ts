@@ -157,7 +157,79 @@ class Marker {
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
-      return this._serializeRange(range);
+      const id = makeid();
+      const selection = Marker.convertRangeToSelection(range);
+
+      let selected = Marker.normalizeText(selection.toString());
+      if (selected) {
+        let preceding = "";
+        let succeeding = "";
+
+        {
+          // find preceding
+          preceding =
+            preceding +
+            Marker.normalizeText(
+              this.getInnerText(range.startContainer).substr(
+                0,
+                range.startOffset
+              )
+            );
+
+          let ptr = range.startContainer as Node | null;
+          while (preceding.length < CharsToKeepForPrecedingAndSucceeding) {
+            ptr = this.findPreviousTextNodeInDomTree(ptr);
+            if (!ptr) {
+              // already reached the front
+              break;
+            }
+            preceding =
+              Marker.normalizeText((ptr as any).textContent) + preceding;
+          }
+          if (preceding.length > CharsToKeepForPrecedingAndSucceeding) {
+            preceding = preceding.substr(
+              preceding.length - CharsToKeepForPrecedingAndSucceeding
+            );
+          }
+        }
+
+        {
+          // find succeeding
+          succeeding =
+            succeeding +
+            Marker.normalizeText(
+              this.getInnerText(range.endContainer).substr(range.endOffset)
+            );
+
+          let ptr = range.endContainer as Node | null;
+          while (succeeding.length < CharsToKeepForPrecedingAndSucceeding) {
+            ptr = this.findNextTextNodeInDomTree(ptr);
+            if (!ptr) {
+              // already reached the end
+              break;
+            }
+            succeeding =
+              succeeding + Marker.normalizeText((ptr as any).textContent);
+          }
+
+          if (succeeding.length > CharsToKeepForPrecedingAndSucceeding) {
+            succeeding = succeeding.substr(
+              0,
+              CharsToKeepForPrecedingAndSucceeding
+            );
+          }
+        }
+
+        this.state.idToSerializedRange[id] = {
+          id,
+          preceding,
+          selected,
+          succeeding,
+        };
+        return this.state.idToSerializedRange[id];
+      }
+
+      return null;
     } finally {
       document.head.removeChild(blackListedElementStyle);
     }
@@ -231,7 +303,38 @@ class Marker {
   public deserializeRange(serializedRange: SerializedRange) {
     document.head.appendChild(blackListedElementStyle);
     try {
-      return this._deserializeRange(serializedRange);
+      this.state.idToSerializedRange[serializedRange.id] = serializedRange;
+      const rootText = this.getNormalizedInnerText(this.rootElement);
+      const targetOffset = rootText.indexOf(
+        serializedRange.preceding +
+          serializedRange.selected +
+          serializedRange.succeeding
+      );
+      if (targetOffset < 0) {
+        throw new Error("failed to deserialize");
+      }
+
+      let start = this.findElementAtOffset(this.rootElement, targetOffset);
+      start = this.forwardOffset(start, serializedRange.preceding.length);
+      let end = this.findElementAtOffset(
+        this.rootElement,
+        targetOffset +
+          (
+            serializedRange.preceding +
+            serializedRange.selected +
+            serializedRange.succeeding
+          ).length
+      );
+      end = this.backwardOffset(end, serializedRange.succeeding.length);
+
+      const range = document.createRange();
+      range.setStart(
+        start.element,
+        Marker.getRealOffset(start.element, start.offset)
+      );
+      range.setEnd(end.element, Marker.getRealOffset(end.element, end.offset));
+      this.trimRangeSpaces(range);
+      return range;
     } finally {
       document.head.removeChild(blackListedElementStyle);
     }
@@ -287,110 +390,6 @@ class Marker {
         element
       );
     }
-  }
-
-  private _deserializeRange(serializedRange: SerializedRange) {
-    this.state.idToSerializedRange[serializedRange.id] = serializedRange;
-    const rootText = this.getNormalizedInnerText(this.rootElement);
-    const targetOffset = rootText.indexOf(
-      serializedRange.preceding +
-        serializedRange.selected +
-        serializedRange.succeeding
-    );
-    if (targetOffset < 0) {
-      throw new Error("failed to deserialize");
-    }
-
-    let start = this.findElementAtOffset(this.rootElement, targetOffset);
-    start = this.forwardOffset(start, serializedRange.preceding.length);
-    let end = this.findElementAtOffset(
-      this.rootElement,
-      targetOffset +
-        (
-          serializedRange.preceding +
-          serializedRange.selected +
-          serializedRange.succeeding
-        ).length
-    );
-    end = this.backwardOffset(end, serializedRange.succeeding.length);
-
-    const range = document.createRange();
-    range.setStart(
-      start.element,
-      Marker.getRealOffset(start.element, start.offset)
-    );
-    range.setEnd(end.element, Marker.getRealOffset(end.element, end.offset));
-    this.trimRangeSpaces(range);
-    return range;
-  }
-
-  private _serializeRange(range: Range): SerializedRange | null {
-    const id = makeid();
-    const selection = Marker.convertRangeToSelection(range);
-
-    let selected = Marker.normalizeText(selection.toString());
-    if (!selected) {
-      return null;
-    }
-
-    let preceding = "";
-    let succeeding = "";
-
-    {
-      // find preceding
-      preceding =
-        preceding +
-        Marker.normalizeText(
-          this.getInnerText(range.startContainer).substr(0, range.startOffset)
-        );
-
-      let ptr = range.startContainer as Node | null;
-      while (preceding.length < CharsToKeepForPrecedingAndSucceeding) {
-        ptr = this.findPreviousTextNodeInDomTree(ptr);
-        if (!ptr) {
-          // already reached the front
-          break;
-        }
-        preceding = Marker.normalizeText((ptr as any).textContent) + preceding;
-      }
-      if (preceding.length > CharsToKeepForPrecedingAndSucceeding) {
-        preceding = preceding.substr(
-          preceding.length - CharsToKeepForPrecedingAndSucceeding
-        );
-      }
-    }
-
-    {
-      // find succeeding
-      succeeding =
-        succeeding +
-        Marker.normalizeText(
-          this.getInnerText(range.endContainer).substr(range.endOffset)
-        );
-
-      let ptr = range.endContainer as Node | null;
-      while (succeeding.length < CharsToKeepForPrecedingAndSucceeding) {
-        ptr = this.findNextTextNodeInDomTree(ptr);
-        if (!ptr) {
-          // already reached the end
-          break;
-        }
-        succeeding =
-          succeeding + Marker.normalizeText((ptr as any).textContent);
-      }
-
-      if (succeeding.length > CharsToKeepForPrecedingAndSucceeding) {
-        succeeding = succeeding.substr(0, CharsToKeepForPrecedingAndSucceeding);
-      }
-    }
-
-    this.state.idToSerializedRange[id] = {
-      id,
-      preceding,
-      selected,
-      succeeding,
-    };
-    return this.state.idToSerializedRange[id];
   }
 
   private highlightHovering(highlightId: string, hovering: boolean) {
