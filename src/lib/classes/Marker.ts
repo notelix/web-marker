@@ -607,9 +607,9 @@ class Marker {
 
   private convertTextNodeToHighlightElement(word: Node) {
     const decoratedElement = document.createElement(HighlightTagName);
-    decoratedElement.innerHTML = this.getInnerText(word);
     word.parentElement?.insertBefore(decoratedElement, word.nextSibling);
     word.parentElement?.removeChild(word);
+    decoratedElement.appendChild(word);
     return decoratedElement;
   }
 
