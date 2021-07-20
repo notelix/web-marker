@@ -163,7 +163,8 @@ class Marker {
       const uid = options?.uid || makeid();
       const selection = Marker.convertRangeToSelection(range);
 
-      let text = Marker.normalizeText(selection.toString());
+      let originalText = selection.toString();
+      let text = Marker.normalizeText(originalText);
       if (text) {
         let textBefore = "";
         let textAfter = "";
@@ -227,6 +228,7 @@ class Marker {
           uid,
           textBefore,
           text,
+          originalText,
           textAfter,
         };
         return this.state.uidToSerializedRange[uid];
