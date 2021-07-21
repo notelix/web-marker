@@ -96,7 +96,11 @@ class Marker {
     if (element.nodeType !== Node.ELEMENT_NODE) {
       return false;
     }
-    if (getComputedStyle(element as any).display === "none") {
+    const computedStyle = getComputedStyle(element as any);
+    if (computedStyle.display === "none") {
+      return true;
+    }
+    if (computedStyle.visibility === "hidden") {
       return true;
     }
 
@@ -154,7 +158,7 @@ class Marker {
 
   public serializeRange(
     range: Range,
-    options:{uid?:string} = { uid: undefined }
+    options: { uid?: string } = { uid: undefined }
   ): SerializedRange | null {
     document.head.appendChild(blackListedElementStyle);
 

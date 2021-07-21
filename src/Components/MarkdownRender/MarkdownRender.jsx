@@ -259,6 +259,14 @@ class MarkdownRender extends React.Component {
           <span>vcxdsf</span>
           <span>qwerthgf</span>
 
+          <div>
+            <span>000000000000000000000000000000000000000000000000</span>
+            <span>
+              visibility hidden <span style={{ visibility: "hidden" }}>!!</span>{" "}
+              test
+            </span>
+            <span>111111111111111111111111111111111111111111111111</span>
+          </div>
           <Content
             options={{ overrides: makeMarkdownOverrides(this.props) }}
             {...this.props}
