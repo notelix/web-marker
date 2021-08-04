@@ -93,16 +93,18 @@ class MarkdownRender extends React.Component {
     rootElement: document.body,
     eventHandler: {
       onHighlightClick: (context, element) => {
-        if (demoMultiRangeMode) {
-          // click again to delete in multi range mode
-          this.marker.unpaint(this.highlights[context.serializedRange.uid]);
-          delete this.highlights[context.serializedRange.uid];
-        } else {
-          this.selectedHighlightId = context.serializedRange.uid;
-          this.setUserSelectionByRange(
-            this.mapHighlightIdToRange[this.selectedHighlightId]
-          );
-        }
+        setTimeout(() => {
+          if (demoMultiRangeMode) {
+            // click again to delete in multi range mode
+            this.marker.unpaint(this.highlights[context.serializedRange.uid]);
+            delete this.highlights[context.serializedRange.uid];
+          } else {
+            this.selectedHighlightId = context.serializedRange.uid;
+            this.setUserSelectionByRange(
+              this.mapHighlightIdToRange[this.selectedHighlightId]
+            );
+          }
+        }, 20);
       },
       onHighlightHoverStateChange: (context, element, hovering) => {
         if (hovering) {
@@ -160,7 +162,9 @@ class MarkdownRender extends React.Component {
     window.pointerPos = { x: pageX, y: pageY };
   };
   mouseupListener = (e) => {
-    this.handleMouseUp(e, false);
+    setTimeout(() => {
+      this.handleMouseUp(e, false);
+    });
   };
 
   handleMouseUp = (e, calledRecursively = false) => {
@@ -170,11 +174,21 @@ class MarkdownRender extends React.Component {
         this.setState({ hideHighlightButtons: true });
         return;
       }
+
       if (!selection.rangeCount) {
         return null;
       }
+
+      let range = null;
+      try {
+        range = selection.getRangeAt(0);
+      } catch (e) {}
+      if (!range) {
+        return null;
+      }
+
       this.selectedHighlightId = null;
-      let range = selection.getRangeAt(0);
+
       this.setUserSelectionByRange(range);
       if (demoMultiRangeMode) {
         const serialized = this.marker.serializeRange(
