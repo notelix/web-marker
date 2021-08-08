@@ -62,3 +62,7 @@ document.addEventListener('mouseup', (e) => {
 npm run build-lib
 npm pack
 ```
+
+# Build with web-marker
+
+* [notelix/notelix](https://github.com/notelix/notelix): An open source web note taking / highlighter software
