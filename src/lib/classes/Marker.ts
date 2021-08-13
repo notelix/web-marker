@@ -383,13 +383,21 @@ class Marker {
   };
 
   public addEventListeners() {
-    this.rootElement.addEventListener("click", this.clickListener);
-    this.rootElement.addEventListener("mouseover", this.mouseoverListener);
+    this.rootElement.addEventListener("click", this.clickListener, true);
+    this.rootElement.addEventListener(
+      "mouseover",
+      this.mouseoverListener,
+      true
+    );
   }
 
   public removeEventListeners() {
-    this.rootElement.removeEventListener("click", this.clickListener);
-    this.rootElement.removeEventListener("mouseover", this.mouseoverListener);
+    this.rootElement.removeEventListener("click", this.clickListener, true);
+    this.rootElement.removeEventListener(
+      "mouseover",
+      this.mouseoverListener,
+      true
+    );
   }
 
   public paintHighlights(highlightId: string) {
