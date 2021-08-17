@@ -325,6 +325,14 @@ class Marker {
 
       let start = this.findElementAtOffset(this.rootElement, targetOffset);
       start = this.forwardOffset(start, serializedRange.textBefore.length);
+      const startElementMaxOffset = Marker.normalizeText(
+        this.getInnerText(start.element)
+      ).length;
+      if (start.offset == startElementMaxOffset) {
+        start = this.forwardOffset(start, 1);
+        start.offset = 0;
+      }
+
       let end = this.findElementAtOffset(
         this.rootElement,
         targetOffset +
@@ -335,6 +343,12 @@ class Marker {
           ).length
       );
       end = this.backwardOffset(end, serializedRange.textAfter.length);
+      if (end.offset == 0) {
+        end = this.backwardOffset(end, 1);
+        end.offset = Marker.normalizeText(
+          this.getInnerText(end.element)
+        ).length;
+      }
 
       const range = document.createRange();
       range.setStart(
