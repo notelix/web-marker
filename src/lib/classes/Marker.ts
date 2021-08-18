@@ -257,6 +257,10 @@ class Marker {
 
       new Promise((resolve) => {
         if (range.startContainer === range.endContainer) {
+          if (range.startOffset === range.endOffset) {
+            resolve(null);
+            return;
+          }
           // special case
           const word = (<Text>range.startContainer).splitText(
             range.startOffset
@@ -287,7 +291,16 @@ class Marker {
 
         toPaint.forEach((item) => {
           if (item) {
-            execute(this.convertTextNodeToHighlightElement(item));
+            let decoratedElement = this.convertTextNodeToHighlightElement(item);
+            execute(decoratedElement);
+
+            if (decoratedElement.getBoundingClientRect().width === 0) {
+              decoratedElement.parentElement?.insertBefore(
+                item,
+                decoratedElement.nextSibling
+              );
+              decoratedElement.parentElement?.removeChild(decoratedElement);
+            }
           }
         });
 
