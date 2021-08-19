@@ -8,7 +8,6 @@ import SerializedRange from "./SerializedRange";
 const HighlightTagName = "web-marker-highlight";
 const HighlightBlacklistedElementClassName = "web-marker-black-listed-element";
 const AttributeNameHighlightId = "highlight-id";
-const CharsToKeepForTextBeforeAndTextAfter = 8;
 
 const blackListedElementStyle = document.createElement("style");
 blackListedElementStyle.innerText = `.${HighlightBlacklistedElementClassName} {display:none;};`;
@@ -161,13 +160,18 @@ class Marker {
 
   public serializeRange(
     range: Range,
-    options: { uid?: string } = { uid: undefined }
+    options: { uid?: string; charsToKeepForTextBeforeAndTextAfter?: number } = {
+      uid: undefined,
+      charsToKeepForTextBeforeAndTextAfter: 16,
+    }
   ): SerializedRange | null {
     document.head.appendChild(blackListedElementStyle);
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
       const uid = options?.uid || makeid();
+      const charsToKeepForTextBeforeAndTextAfter =
+        options?.charsToKeepForTextBeforeAndTextAfter || 16;
       const selection = Marker.convertRangeToSelection(range);
 
       let originalText = selection.toString();
@@ -188,7 +192,7 @@ class Marker {
             );
 
           let ptr = range.startContainer as Node | null;
-          while (textBefore.length < CharsToKeepForTextBeforeAndTextAfter) {
+          while (textBefore.length < charsToKeepForTextBeforeAndTextAfter) {
             ptr = this.findPreviousTextNodeInDomTree(ptr);
             if (!ptr) {
               // already reached the front
@@ -197,9 +201,9 @@ class Marker {
             textBefore =
               Marker.normalizeText((ptr as any).textContent) + textBefore;
           }
-          if (textBefore.length > CharsToKeepForTextBeforeAndTextAfter) {
+          if (textBefore.length > charsToKeepForTextBeforeAndTextAfter) {
             textBefore = textBefore.substr(
-              textBefore.length - CharsToKeepForTextBeforeAndTextAfter
+              textBefore.length - charsToKeepForTextBeforeAndTextAfter
             );
           }
         }
@@ -213,7 +217,7 @@ class Marker {
             );
 
           let ptr = range.endContainer as Node | null;
-          while (textAfter.length < CharsToKeepForTextBeforeAndTextAfter) {
+          while (textAfter.length < charsToKeepForTextBeforeAndTextAfter) {
             ptr = this.findNextTextNodeInDomTree(ptr);
             if (!ptr) {
               // already reached the end
@@ -223,10 +227,10 @@ class Marker {
               textAfter + Marker.normalizeText((ptr as any).textContent);
           }
 
-          if (textAfter.length > CharsToKeepForTextBeforeAndTextAfter) {
+          if (textAfter.length > charsToKeepForTextBeforeAndTextAfter) {
             textAfter = textAfter.substr(
               0,
-              CharsToKeepForTextBeforeAndTextAfter
+              charsToKeepForTextBeforeAndTextAfter
             );
           }
         }
