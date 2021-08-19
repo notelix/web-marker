@@ -251,7 +251,7 @@ class Marker {
     const uid = serializedRange.uid;
     const range = this.deserializeRange(serializedRange);
     if (!range.collapsed) {
-      const execute = (element: HTMLElement) => {
+      const setElementHighlightIdAttribute = (element: HTMLElement) => {
         element.setAttribute(AttributeNameHighlightId, uid);
       };
 
@@ -266,7 +266,9 @@ class Marker {
             range.startOffset
           );
           word.splitText(range.endOffset);
-          execute(this.convertTextNodeToHighlightElement(word));
+          setElementHighlightIdAttribute(
+            this.convertTextNodeToHighlightElement(word)
+          );
 
           resolve(null);
           return;
@@ -292,9 +294,9 @@ class Marker {
         toPaint.forEach((item) => {
           if (item) {
             let decoratedElement = this.convertTextNodeToHighlightElement(item);
-            execute(decoratedElement);
+            setElementHighlightIdAttribute(decoratedElement);
 
-            if (decoratedElement.getBoundingClientRect().width === 0) {
+            if (!decoratedElement.innerText) {
               decoratedElement.parentElement?.insertBefore(
                 item,
                 decoratedElement.nextSibling
