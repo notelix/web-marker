@@ -42,10 +42,10 @@ const defaultEventHandler: EventHandler = {
 };
 
 class Marker {
+  public static normalizeTextCache = {} as any;
   rootElement: Element;
   eventHandler: EventHandler;
   highlightPainter: HighlightPainter;
-
   state = {
     lastHoverId: "",
     uidToSerializedRange: {} as { [key: string]: SerializedRange },
@@ -86,7 +86,10 @@ class Marker {
   }
 
   private static normalizeText(s: string) {
-    return s.replace(/\s/g, "").toLowerCase();
+    if (!Marker.normalizeTextCache[s]) {
+      Marker.normalizeTextCache[s] = s.replace(/\s/g, "").toLowerCase();
+    }
+    return Marker.normalizeTextCache[s];
   }
 
   private static isBlackListedElementNode(element: Node | null) {
