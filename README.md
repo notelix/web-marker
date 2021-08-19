@@ -63,6 +63,6 @@ npm run build-lib
 npm pack
 ```
 
-# Build with web-marker
+# Built with web-marker
 
-* [notelix/notelix](https://github.com/notelix/notelix): An open source web note taking / highlighter software
+* [notelix/notelix](https://github.com/notelix/notelix): An open source web note taking / highlighter software (chrome extension with backend)
