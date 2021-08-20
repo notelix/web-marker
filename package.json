@@ -24,7 +24,7 @@
     "bulma": "^0.9.1",
     "lodash-es": "^4.17.15",
     "markdown-to-jsx": "^7.0.1",
-    "node-sass": "^4.0.0",
+    "node-sass": "^6.0.1",
     "raw-loader": "^4.0.1",
     "react": "^17.0.0",
     "react-app-rewired": "^2.1.6",
