@@ -7,6 +7,8 @@ A web page highlighter that features
 * nested highlighting
 * no runtime-dependency
 
+![demo](./design/demo.png)
+
 # How to run
 ```bash
 git clone https://github.com/notelix/web-marker
