@@ -266,6 +266,11 @@ class MarkdownRender extends React.Component {
           )}
 
         <div className="content-wrapper">
+          <div>
+            Here is a random number: {Math.random()}, try highlighting around
+            it.
+          </div>
+
           <span>abc</span>
           <span className="web-marker-black-listed-element">
             bl<span>ackli</span>sted

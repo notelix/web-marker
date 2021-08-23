@@ -336,42 +336,12 @@ class Marker {
     try {
       this.state.uidToSerializedRange[serializedRange.uid] = serializedRange;
       const rootText = this.getNormalizedInnerText(this.rootElement);
-      const targetOffset = rootText.indexOf(
-        serializedRange.textBefore +
-          serializedRange.text +
-          serializedRange.textAfter
-      );
-      if (targetOffset < 0) {
-        throw new Error("failed to deserialize");
-      }
-
-      let start = this.findElementAtOffset(this.rootElement, targetOffset);
-      start = this.forwardOffset(start, serializedRange.textBefore.length);
-      const startElementMaxOffset = Marker.normalizeText(
-        this.getInnerText(start.element)
-      ).length;
-      if (start.offset == startElementMaxOffset) {
-        start = this.forwardOffset(start, 1);
-        start.offset = 0;
-      }
-
-      let end = this.findElementAtOffset(
+      const targetOffset = this.resolveTargetOffset(rootText, serializedRange);
+      const start = this.findElementAtOffset(this.rootElement, targetOffset);
+      const end = this.findElementAtOffset(
         this.rootElement,
-        targetOffset +
-          (
-            serializedRange.textBefore +
-            serializedRange.text +
-            serializedRange.textAfter
-          ).length
+        targetOffset + serializedRange.text.length
       );
-      end = this.backwardOffset(end, serializedRange.textAfter.length);
-      if (end.offset == 0) {
-        end = this.backwardOffset(end, 1);
-        end.offset = Marker.normalizeText(
-          this.getInnerText(end.element)
-        ).length;
-      }
-
       const range = document.createRange();
       range.setStart(
         start.element,
@@ -620,8 +590,9 @@ class Marker {
         if (Marker.isBlackListedElementNode(root.childNodes[i])) {
           continue;
         }
-        const childSize = this.getNormalizedInnerText(root.childNodes[i])
-          .length;
+        const childSize = this.getNormalizedInnerText(
+          root.childNodes[i]
+        ).length;
         cumulativeOffset += childSize;
         if (cumulativeOffset < offset) {
           continue;
@@ -708,6 +679,43 @@ class Marker {
       ) as any;
       range.setEnd(prevNode, this.getInnerText(prevNode).length);
     }
+  }
+
+  private resolveTargetOffset(
+    rootText: any,
+    serializedRange: SerializedRange
+  ): number {
+    // TODO: optimize algorithm, maybe use https://github.com/google/diff-match-patch
+
+    let possibility1 = rootText.indexOf(
+      serializedRange.textBefore +
+        serializedRange.text +
+        serializedRange.textAfter
+    );
+    if (possibility1 >= 0) {
+      return possibility1 + serializedRange.textBefore.length;
+    }
+
+    let possibility2 = rootText.indexOf(
+      serializedRange.text + serializedRange.textAfter
+    );
+    if (possibility2 >= 0) {
+      return possibility2;
+    }
+
+    let possibility3 = rootText.indexOf(
+      serializedRange.textBefore + serializedRange.text
+    );
+    if (possibility3 >= 0) {
+      return possibility3 + serializedRange.textBefore.length;
+    }
+
+    let possibility4 = rootText.indexOf(serializedRange.text);
+    if (possibility4 >= 0) {
+      return possibility4;
+    }
+
+    throw new Error("failed to deserialize");
   }
 }
 
