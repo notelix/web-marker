@@ -4,6 +4,7 @@ import HighlightPainter from "./HighlightPainter";
 import EventHandlerContext from "./Context";
 import Context from "./Context";
 import SerializedRange from "./SerializedRange";
+import resolveSerializedRangeOffsetInText from "../../utils/resolveSerializedRangeOffsetInText";
 
 const HighlightTagName = "web-marker-highlight";
 const HighlightBlacklistedElementClassName = "web-marker-black-listed-element";
@@ -336,11 +337,14 @@ class Marker {
     try {
       this.state.uidToSerializedRange[serializedRange.uid] = serializedRange;
       const rootText = this.getNormalizedInnerText(this.rootElement);
-      const targetOffset = this.resolveTargetOffset(rootText, serializedRange);
-      const start = this.findElementAtOffset(this.rootElement, targetOffset);
+      const offset = resolveSerializedRangeOffsetInText(
+        rootText,
+        serializedRange
+      );
+      const start = this.findElementAtOffset(this.rootElement, offset);
       const end = this.findElementAtOffset(
         this.rootElement,
-        targetOffset + serializedRange.text.length
+        offset + serializedRange.text.length
       );
       const range = document.createRange();
       range.setStart(
@@ -679,43 +683,6 @@ class Marker {
       ) as any;
       range.setEnd(prevNode, this.getInnerText(prevNode).length);
     }
-  }
-
-  private resolveTargetOffset(
-    rootText: any,
-    serializedRange: SerializedRange
-  ): number {
-    // TODO: optimize algorithm, maybe use https://github.com/google/diff-match-patch
-
-    let possibility1 = rootText.indexOf(
-      serializedRange.textBefore +
-        serializedRange.text +
-        serializedRange.textAfter
-    );
-    if (possibility1 >= 0) {
-      return possibility1 + serializedRange.textBefore.length;
-    }
-
-    let possibility2 = rootText.indexOf(
-      serializedRange.text + serializedRange.textAfter
-    );
-    if (possibility2 >= 0) {
-      return possibility2;
-    }
-
-    let possibility3 = rootText.indexOf(
-      serializedRange.textBefore + serializedRange.text
-    );
-    if (possibility3 >= 0) {
-      return possibility3 + serializedRange.textBefore.length;
-    }
-
-    let possibility4 = rootText.indexOf(serializedRange.text);
-    if (possibility4 >= 0) {
-      return possibility4;
-    }
-
-    throw new Error("failed to deserialize");
   }
 }
 
