@@ -1,4 +1,5 @@
 import SerializedRange from "../lib/classes/SerializedRange";
+import DeserializationError from "../lib/classes/errors/DeserializationError";
 
 const resolveSerializedRangeOffsetInTextStrategies = [
   {
@@ -38,5 +39,5 @@ export default function resolveSerializedRangeOffsetInText(
     }
   }
 
-  throw new Error("failed to deserialize");
+  throw new DeserializationError();
 }
