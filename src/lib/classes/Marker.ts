@@ -686,6 +686,10 @@ class Marker {
       range.setEnd(prevNode, this.getInnerText(prevNode).length);
     }
   }
+
+  public getSerializedRangeFromUid(uid: string): SerializedRange | null {
+    return this.state.uidToSerializedRange[uid] || null;
+  }
 }
 
 export default Marker;
