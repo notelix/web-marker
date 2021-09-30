@@ -421,11 +421,13 @@ class Marker {
 
   private highlightHovering(highlightId: string, hovering: boolean) {
     for (let element of Marker.resolveHighlightElements(highlightId)) {
-      this.eventHandler.onHighlightHoverStateChange(
-        this.buildContext(highlightId),
-        element as any,
-        hovering
-      );
+      if (this.eventHandler.onHighlightHoverStateChange) {
+        this.eventHandler.onHighlightHoverStateChange(
+          this.buildContext(highlightId),
+          element as any,
+          hovering
+        );
+      }
     }
   }
 
