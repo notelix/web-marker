@@ -3,10 +3,10 @@ import DeserializationError, {
   isDeserializationError,
 } from "./lib/classes/errors/DeserializationError";
 
-export default {
-  Marker: Marker,
-  Errors: {
-    DeserializationError,
-    isDeserializationError,
-  },
+const Errors = {
+  DeserializationError,
+  isDeserializationError,
 };
+
+export { Marker };
+export { Errors };

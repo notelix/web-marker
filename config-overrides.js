@@ -14,7 +14,6 @@ module.exports = function override(config, env) {
             filename: 'web-marker.js',
             library: "web-marker",
             libraryTarget: "umd",
-            libraryExport: 'default'
         }
 
         delete config.optimization["splitChunks"];
