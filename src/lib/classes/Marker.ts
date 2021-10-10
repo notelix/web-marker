@@ -367,7 +367,7 @@ class Marker {
     const target = e.target as HTMLElement;
     const id = target.getAttribute(AttributeNameHighlightId);
     if (id && this.eventHandler.onHighlightClick) {
-      this.eventHandler.onHighlightClick(this.buildContext(id), target);
+      this.eventHandler.onHighlightClick(this.buildContext(id), target, e);
     }
   };
 
@@ -385,10 +385,10 @@ class Marker {
     this.state.lastHoverId = newHoverId as string;
 
     if (newHoverId) {
-      this.highlightHovering(newHoverId, true);
+      this.highlightHovering(newHoverId, true, e);
     }
     if (oldHoverId) {
-      this.highlightHovering(oldHoverId, false);
+      this.highlightHovering(oldHoverId, false, e);
     }
   };
 
@@ -419,13 +419,14 @@ class Marker {
     }
   }
 
-  private highlightHovering(highlightId: string, hovering: boolean) {
+  private highlightHovering(highlightId: string, hovering: boolean, e: Event) {
     for (let element of Marker.resolveHighlightElements(highlightId)) {
       if (this.eventHandler.onHighlightHoverStateChange) {
         this.eventHandler.onHighlightHoverStateChange(
           this.buildContext(highlightId),
           element as any,
-          hovering
+          hovering,
+          e
         );
       }
     }
