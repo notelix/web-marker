@@ -694,3 +694,4 @@ class Marker {
 }
 
 export default Marker;
+export type { MarkerConstructorArgs };
