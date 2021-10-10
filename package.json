@@ -1,6 +1,6 @@
 {
   "name": "@notelix/web-marker",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "a web page highlighter",
   "main": "./build/web-marker.js",
   "types": "./build/libroot.d.ts",
