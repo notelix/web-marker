@@ -4,12 +4,13 @@ import HighlightPainter from "./HighlightPainter";
 import EventHandlerContext from "./Context";
 import Context from "./Context";
 import SerializedRange from "./SerializedRange";
-import resolveSerializedRangeOffsetInText from "../../utils/resolveSerializedRangeOffsetInText";
+import DeserializationError from "./errors/DeserializationError";
 
 const HighlightTagName = "web-marker-highlight";
 const HighlightBlacklistedElementClassName = "web-marker-black-listed-element";
 const AttributeNameHighlightId = "highlight-id";
 
+const defaultCharsToKeepForTextBeforeAndTextAfter = 128;
 const blackListedElementStyle = document.createElement("style");
 blackListedElementStyle.innerText = `.${HighlightBlacklistedElementClassName} {display:none;};`;
 
@@ -163,7 +164,8 @@ class Marker {
     range: Range,
     options: { uid?: string; charsToKeepForTextBeforeAndTextAfter?: number } = {
       uid: undefined,
-      charsToKeepForTextBeforeAndTextAfter: 16,
+      charsToKeepForTextBeforeAndTextAfter:
+        defaultCharsToKeepForTextBeforeAndTextAfter,
     }
   ): SerializedRange | null {
     document.head.appendChild(blackListedElementStyle);
@@ -172,12 +174,13 @@ class Marker {
       this.adjustRangeAroundBlackListedElement(range);
       const uid = options?.uid || makeid();
       const charsToKeepForTextBeforeAndTextAfter =
-        options?.charsToKeepForTextBeforeAndTextAfter || 16;
+        options?.charsToKeepForTextBeforeAndTextAfter ||
+        defaultCharsToKeepForTextBeforeAndTextAfter;
       const selection = Marker.convertRangeToSelection(range);
 
-      let originalText = selection.toString();
-      let text = Marker.normalizeText(originalText);
-      if (text) {
+      let text = selection.toString();
+      let textNormalized = Marker.normalizeText(text);
+      if (textNormalized) {
         let textBefore = "";
         let textAfter = "";
 
@@ -185,11 +188,9 @@ class Marker {
           // find textBefore
           textBefore =
             textBefore +
-            Marker.normalizeText(
-              this.getInnerText(range.startContainer).substr(
-                0,
-                range.startOffset
-              )
+            this.getInnerText(range.startContainer).substr(
+              0,
+              range.startOffset
             );
 
           let ptr = range.startContainer as Node | null;
@@ -199,8 +200,7 @@ class Marker {
               // already reached the front
               break;
             }
-            textBefore =
-              Marker.normalizeText((ptr as any).textContent) + textBefore;
+            textBefore = (ptr as any).textContent + textBefore;
           }
           if (textBefore.length > charsToKeepForTextBeforeAndTextAfter) {
             textBefore = textBefore.substr(
@@ -213,9 +213,7 @@ class Marker {
           // find textAfter
           textAfter =
             textAfter +
-            Marker.normalizeText(
-              this.getInnerText(range.endContainer).substr(range.endOffset)
-            );
+            this.getInnerText(range.endContainer).substr(range.endOffset);
 
           let ptr = range.endContainer as Node | null;
           while (textAfter.length < charsToKeepForTextBeforeAndTextAfter) {
@@ -224,8 +222,7 @@ class Marker {
               // already reached the end
               break;
             }
-            textAfter =
-              textAfter + Marker.normalizeText((ptr as any).textContent);
+            textAfter = textAfter + (ptr as any).textContent;
           }
 
           if (textAfter.length > charsToKeepForTextBeforeAndTextAfter) {
@@ -240,7 +237,6 @@ class Marker {
           uid,
           textBefore,
           text,
-          originalText,
           textAfter,
         };
         return this.state.uidToSerializedRange[uid];
@@ -337,14 +333,14 @@ class Marker {
     try {
       this.state.uidToSerializedRange[serializedRange.uid] = serializedRange;
       const rootText = this.getNormalizedInnerText(this.rootElement);
-      const offset = resolveSerializedRangeOffsetInText(
+      const offset = this.resolveSerializedRangeOffsetInText(
         rootText,
         serializedRange
       );
       const start = this.findElementAtOffset(this.rootElement, offset);
       const end = this.findElementAtOffset(
         this.rootElement,
-        offset + serializedRange.text.length
+        offset + Marker.normalizeText(serializedRange.text).length
       );
       const range = document.createRange();
       range.setStart(
@@ -691,7 +687,52 @@ class Marker {
   public getSerializedRangeFromUid(uid: string): SerializedRange | null {
     return this.state.uidToSerializedRange[uid] || null;
   }
+
+  resolveSerializedRangeOffsetInText(
+    text: any,
+    serializedRange: SerializedRange
+  ): number {
+    // TODO: optimize algorithm, maybe use https://github.com/google/diff-match-patch
+    const textBeforeNormalized = Marker.normalizeText(
+      serializedRange.textBefore
+    );
+    const textAfterNormalized = Marker.normalizeText(serializedRange.textAfter);
+    const textNormalized = Marker.normalizeText(serializedRange.text);
+
+    for (let strategy of resolveSerializedRangeOffsetInTextStrategies) {
+      const textToSearch =
+        (strategy.textBefore ? textBeforeNormalized : "") +
+        textNormalized +
+        (strategy.textAfter ? textAfterNormalized : "");
+
+      const index = text.indexOf(textToSearch);
+      if (index >= 0) {
+        return index + (strategy.textBefore ? textBeforeNormalized.length : 0);
+      }
+    }
+
+    throw new DeserializationError();
+  }
 }
+
+const resolveSerializedRangeOffsetInTextStrategies = [
+  {
+    textBefore: true,
+    textAfter: true,
+  },
+  {
+    textBefore: false,
+    textAfter: true,
+  },
+  {
+    textBefore: true,
+    textAfter: false,
+  },
+  {
+    textBefore: false,
+    textAfter: false,
+  },
+];
 
 export default Marker;
 export type { MarkerConstructorArgs };

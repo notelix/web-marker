@@ -1,9 +1,8 @@
 interface SerializedRange {
-    uid: string;
-    textBefore: string;
-    text: string;
-    originalText: string;
-    textAfter: string;
+  uid: string;
+  textBefore: string;
+  text: string;
+  textAfter: string;
 }
 
 export default SerializedRange;
