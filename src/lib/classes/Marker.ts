@@ -407,11 +407,18 @@ class Marker {
   }
 
   public paintHighlights(highlightId: string) {
+    let context = this.buildContext(highlightId);
+    if (this.highlightPainter.beforePaintHighlight) {
+      this.highlightPainter.beforePaintHighlight(context);
+    }
     for (let element of Marker.resolveHighlightElements(highlightId)) {
       this.highlightPainter.paintHighlight(
-        this.buildContext(highlightId),
-        element
+          context,
+          element
       );
+    }
+    if (this.highlightPainter.afterPaintHighlight) {
+      this.highlightPainter.afterPaintHighlight(context);
     }
   }
 
