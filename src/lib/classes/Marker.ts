@@ -324,7 +324,6 @@ class Marker {
           this.paintHighlights(uid);
         });
       }
-      Marker.clearSelection();
       results[i] = {range};
     }
 
@@ -354,10 +353,11 @@ class Marker {
     document.head.appendChild(blackListedElementStyle);
     const results = {} as any;
     const errors = {} as any;
+    const rootText = this.getNormalizedInnerText(this.rootElement);
+
     for (let i = 0; i < serializedRanges.length; i++) {
       try {
         this.state.uidToSerializedRange[serializedRanges[i].uid] = serializedRanges[i];
-        const rootText = this.getNormalizedInnerText(this.rootElement);
         const offset = this.resolveSerializedRangeOffsetInText(
             rootText,
             serializedRanges[i]
