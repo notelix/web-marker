@@ -249,7 +249,6 @@ class Marker {
   }
 
   public batchPaint(serializedRanges: SerializedRange[]) {
-    const results = {} as any;
     const errors = {} as any;
     const {results: deserializedRanges, errors: deserializedRangeErrors} = this.batchDeserializeRange(serializedRanges);
 
@@ -267,29 +266,28 @@ class Marker {
           element.setAttribute(AttributeNameHighlightId, uid);
         };
 
-        new Promise((resolve) => {
-          if (range.startContainer === range.endContainer) {
-            if (range.startOffset === range.endOffset) {
-              resolve(null);
+        try {
+          (() => {
+            if (range.startContainer === range.endContainer) {
+              if (range.startOffset === range.endOffset) {
+                return;
+              }
+              // special case
+              const word = (<Text>range.startContainer).splitText(
+                  range.startOffset
+              );
+              word.splitText(range.endOffset);
+              setElementHighlightIdAttribute(
+                  this.convertTextNodeToHighlightElement(word)
+              );
+
               return;
             }
-            // special case
-            const word = (<Text>range.startContainer).splitText(
+
+            const toPaint = [];
+            let ptr = (<Text>range.startContainer).splitText(
                 range.startOffset
-            );
-            word.splitText(range.endOffset);
-            setElementHighlightIdAttribute(
-                this.convertTextNodeToHighlightElement(word)
-            );
-
-            resolve(null);
-            return;
-          }
-
-          const toPaint = [];
-          let ptr = (<Text>range.startContainer).splitText(
-              range.startOffset
-          ) as Node | null;
+            ) as Node | null;
           toPaint.push(ptr);
 
           while (true) {
@@ -318,27 +316,27 @@ class Marker {
             }
           });
 
-          resolve(null);
-          return;
-        }).then(() => {
+            return;
+          })()
+
           this.paintHighlights(uid);
-        });
+        } catch (ex) {
+          errors[i] = ex;
+        }
       }
-      results[i] = {range};
     }
 
-    return {results, errors};
+    return {errors};
   }
 
   public paint(serializedRange: SerializedRange) {
     if (!serializedRange) {
       return;
     }
-    const {results, errors} = this.batchPaint([serializedRange]);
+    const {errors} = this.batchPaint([serializedRange]);
     if (errors[0]) {
       throw errors[0];
     }
-    return results[0];
   }
 
   public unpaint(serializedRange: SerializedRange) {
