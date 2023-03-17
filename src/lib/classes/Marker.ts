@@ -12,8 +12,7 @@ const AttributeNameHighlightId = "highlight-id";
 
 const defaultCharsToKeepForTextBeforeAndTextAfter = 128;
 const blackListedElementStyle = document.createElement("style");
-blackListedElementStyle.innerText = `.${HighlightBlacklistedElementClassName}, .MJX_Assistive_MathML>math>mi, .MJX_Assistive_MathML>math>mo, .MJX_Assistive_MathML>math> mn, math>semantics mi, math>semantics mo, math>semantics mn {display:none!important;};`;
-
+blackListedElementStyle.innerText = `.${HighlightBlacklistedElementClassName}, .MJX_Assistive_MathML>math>*, math>semantics>* {display:none!important;};`;
 interface MarkerConstructorArgs {
   rootElement?: HTMLElement;
   eventHandler?: EventHandler;
