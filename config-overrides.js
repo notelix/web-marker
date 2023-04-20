@@ -1,6 +1,13 @@
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const path = require("path");
+const CopyPlugin = require("copy-webpack-plugin");
+
 module.exports = function override(config, env) {
+    config.plugins.push(new CopyPlugin({
+        patterns: [
+            {from: 'public', to: 'public'}
+        ]
+    }))
     if (process.env.NO_BUNDLE_ANALYSER !== "true") {
         config.plugins.push(new BundleAnalyzerPlugin());
     }

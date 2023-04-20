@@ -25,6 +25,7 @@
     "@types/react-dom": "^17.0.9",
     "@types/uuid": "^8.3.1",
     "bulma": "^0.9.1",
+    "copy-webpack-plugin": "6",
     "lodash-es": "^4.17.15",
     "markdown-to-jsx": "^7.0.1",
     "raw-loader": "^4.0.1",
