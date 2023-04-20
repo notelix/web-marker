@@ -92,7 +92,7 @@ class IframeRender extends React.Component {
 
   paint(serializedRange) {
     this.marker.paint(serializedRange);
-    Marker.clearSelection();
+    Marker.clearSelection(this.marker.window);
     this.highlights[serializedRange.uid] = serializedRange;
     this.mapHighlightIdToRange[serializedRange.uid] = this.marker.deserializeRange(
         serializedRange

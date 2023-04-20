@@ -296,7 +296,6 @@ class MarkdownRender extends React.Component {
             {markdown.content}
           </Content>
         </div>
-        <iframe src={`${process.env.PUBLIC_URL}/iframe.html`} style={{ width: '100%', height: '100vh' }} />
       </div>
     );
   }

@@ -44,6 +44,8 @@ const defaultEventHandler: EventHandler = {
 class Marker {
   public static normalizeTextCache = {} as any;
   rootElement: Element;
+  document: Document;
+  window: Window;
   eventHandler: EventHandler;
   highlightPainter: HighlightPainter;
   state = {
@@ -57,12 +59,14 @@ class Marker {
     eventHandler,
   }: MarkerConstructorArgs) {
     this.rootElement = rootElement || document.body;
+    this.document = this.rootElement.getRootNode() as Document;
+    this.window = this.document.defaultView as Window;
     this.highlightPainter = highlightPainter || defaultHighlightPainter;
     this.eventHandler = eventHandler || defaultEventHandler;
   }
 
-  public static clearSelection() {
-    const selection = window.getSelection();
+  public static clearSelection(win: Window = window) {
+    const selection = win.getSelection();
     if (!selection) {
       return;
     }
@@ -73,10 +77,10 @@ class Marker {
     }
   }
 
-  private static resolveHighlightElements(highlightId: string): HTMLElement[] {
+  private resolveHighlightElements(highlightId: string): HTMLElement[] {
     let elements: HTMLElement[] = [];
     for (let item of Array.from(
-      document.getElementsByTagName(HighlightTagName)
+      this.document.getElementsByTagName(HighlightTagName)
     )) {
       if (item.getAttribute(AttributeNameHighlightId) === highlightId) {
         elements.push(item as HTMLElement);
@@ -152,8 +156,8 @@ class Marker {
     element.parentNode?.removeChild(element);
   }
 
-  private static convertRangeToSelection(range: Range) {
-    const selection = window.getSelection() as any;
+  private convertRangeToSelection(range: Range) {
+    const selection = this.window.getSelection() as any;
     selection.removeAllRanges();
     selection.addRange(range);
     return selection;
@@ -167,7 +171,7 @@ class Marker {
         defaultCharsToKeepForTextBeforeAndTextAfter,
     }
   ): SerializedRange | null {
-    document.head.appendChild(blackListedElementStyle);
+    this.document.head.appendChild(blackListedElementStyle);
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
@@ -175,7 +179,7 @@ class Marker {
       const charsToKeepForTextBeforeAndTextAfter =
         options?.charsToKeepForTextBeforeAndTextAfter ||
         defaultCharsToKeepForTextBeforeAndTextAfter;
-      const selection = Marker.convertRangeToSelection(range);
+      const selection = this.convertRangeToSelection(range);
 
       let text = selection.toString();
       let textNormalized = Marker.normalizeText(text);
@@ -243,7 +247,7 @@ class Marker {
 
       return null;
     } finally {
-      document.head.removeChild(blackListedElementStyle);
+      this.document.head.removeChild(blackListedElementStyle);
     }
   }
 
@@ -341,13 +345,13 @@ class Marker {
   public unpaint(serializedRange: SerializedRange) {
     const id = serializedRange.uid;
 
-    for (let element of Marker.resolveHighlightElements(id)) {
+    for (let element of this.resolveHighlightElements(id)) {
       Marker.unpaintElement(element);
     }
   }
 
   private batchDeserializeRange(serializedRanges: SerializedRange[]) {
-    document.head.appendChild(blackListedElementStyle);
+    this.document.head.appendChild(blackListedElementStyle);
     const results = {} as any;
     const errors = {} as any;
     const rootText = this.getNormalizedInnerText(this.rootElement);
@@ -364,7 +368,7 @@ class Marker {
             this.rootElement,
             offset + Marker.normalizeText(serializedRanges[i].text).length
         );
-        const range = document.createRange();
+        const range = this.document.createRange();
         range.setStart(
             start.element,
             Marker.getRealOffset(start.element, start.offset)
@@ -377,7 +381,7 @@ class Marker {
       }
     }
 
-    document.head.removeChild(blackListedElementStyle);
+    this.document.head.removeChild(blackListedElementStyle);
     return {results, errors}
   }
 
@@ -445,7 +449,7 @@ class Marker {
     if (this.highlightPainter.beforePaintHighlight) {
       this.highlightPainter.beforePaintHighlight(context);
     }
-    for (let element of Marker.resolveHighlightElements(highlightId)) {
+    for (let element of this.resolveHighlightElements(highlightId)) {
       this.highlightPainter.paintHighlight(
           context,
           element
@@ -457,7 +461,7 @@ class Marker {
   }
 
   private highlightHovering(highlightId: string, hovering: boolean, e: Event) {
-    for (let element of Marker.resolveHighlightElements(highlightId)) {
+    for (let element of this.resolveHighlightElements(highlightId)) {
       if (this.eventHandler.onHighlightHoverStateChange) {
         this.eventHandler.onHighlightHoverStateChange(
           this.buildContext(highlightId),
@@ -669,7 +673,7 @@ class Marker {
   }
 
   private convertTextNodeToHighlightElement(word: Node) {
-    const decoratedElement = document.createElement(HighlightTagName);
+    const decoratedElement = this.document.createElement(HighlightTagName);
     word.parentElement?.insertBefore(decoratedElement, word.nextSibling);
     word.parentElement?.removeChild(word);
     decoratedElement.appendChild(word);
