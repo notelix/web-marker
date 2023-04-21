@@ -101,11 +101,12 @@ class IframeRender extends React.Component {
   }
 
   setUserSelectionByRange(range) {
+    const iframePos = this.iframeRef.current.getBoundingClientRect();
     let pos = range.getBoundingClientRect();
 
     let calculatedPos = {
-      top: pos.top + window.scrollY,
-      left: pos.left + window.scrollX,
+      top: pos.top + window.scrollY + iframePos.top,
+      left: pos.left + window.scrollX + iframePos.left,
       width: pos.width,
       height: pos.height,
     };
