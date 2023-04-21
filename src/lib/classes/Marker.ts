@@ -394,7 +394,8 @@ class Marker {
   }
 
   clickListener = (e: Event) => {
-    if (!e.target || !(e.target instanceof HTMLElement)) {
+    // the iframe HTMLElement instance is not same as other window HTMLElement instance
+    if (!e.target || !(e.target instanceof (this.window as any).HTMLElement)) {
       return;
     }
 
@@ -406,7 +407,7 @@ class Marker {
   };
 
   mouseoverListener = (e: Event) => {
-    if (!e.target || !(e.target instanceof HTMLElement)) {
+    if (!e.target || !(e.target instanceof (this.window as any).HTMLElement)) {
       return;
     }
 
