@@ -125,7 +125,9 @@ class Marker {
       tagName === "STYLE" ||
       tagName === "SCRIPT" ||
       tagName === "TITLE" ||
-      tagName === "NOSCRIPT"
+      tagName === "NOSCRIPT" ||
+      tagName === "SVG" ||
+      tagName === "svg"
     );
   }
 
@@ -253,7 +255,8 @@ class Marker {
 
   public batchPaint(serializedRanges: SerializedRange[]) {
     const errors = {} as any;
-    const {results: deserializedRanges, errors: deserializedRangeErrors} = this.batchDeserializeRange(serializedRanges);
+    const { results: deserializedRanges, errors: deserializedRangeErrors } =
+      this.batchDeserializeRange(serializedRanges);
 
     for (let i = 0; i < serializedRanges.length; i++) {
       if (deserializedRangeErrors[i]) {
@@ -277,11 +280,11 @@ class Marker {
               }
               // special case
               const word = (<Text>range.startContainer).splitText(
-                  range.startOffset
+                range.startOffset
               );
               word.splitText(range.endOffset);
               setElementHighlightIdAttribute(
-                  this.convertTextNodeToHighlightElement(word)
+                this.convertTextNodeToHighlightElement(word)
               );
 
               return;
@@ -289,38 +292,39 @@ class Marker {
 
             const toPaint = [];
             let ptr = (<Text>range.startContainer).splitText(
-                range.startOffset
+              range.startOffset
             ) as Node | null;
-          toPaint.push(ptr);
-
-          while (true) {
-            ptr = this.findNextTextNodeInDomTree(ptr);
-            if (ptr === range.endContainer) {
-              break;
-            }
             toPaint.push(ptr);
-          }
 
-          (<Text>range.endContainer).splitText(range.endOffset);
-          toPaint.push(range.endContainer);
+            while (true) {
+              ptr = this.findNextTextNodeInDomTree(ptr);
+              if (ptr === range.endContainer) {
+                break;
+              }
+              toPaint.push(ptr);
+            }
 
-          toPaint.forEach((item) => {
-            if (item) {
-              let decoratedElement = this.convertTextNodeToHighlightElement(item);
-              setElementHighlightIdAttribute(decoratedElement);
+            (<Text>range.endContainer).splitText(range.endOffset);
+            toPaint.push(range.endContainer);
 
-              if (!decoratedElement.innerText) {
-                decoratedElement.parentElement?.insertBefore(
+            toPaint.forEach((item) => {
+              if (item) {
+                let decoratedElement =
+                  this.convertTextNodeToHighlightElement(item);
+                setElementHighlightIdAttribute(decoratedElement);
+
+                if (!decoratedElement.innerText) {
+                  decoratedElement.parentElement?.insertBefore(
                     item,
                     decoratedElement.nextSibling
-                );
-                decoratedElement.parentElement?.removeChild(decoratedElement);
+                  );
+                  decoratedElement.parentElement?.removeChild(decoratedElement);
+                }
               }
-            }
-          });
+            });
 
             return;
-          })()
+          })();
 
           this.paintHighlights(uid);
         } catch (ex) {
@@ -329,14 +333,14 @@ class Marker {
       }
     }
 
-    return {errors};
+    return { errors };
   }
 
   public paint(serializedRange: SerializedRange) {
     if (!serializedRange) {
       return;
     }
-    const {errors} = this.batchPaint([serializedRange]);
+    const { errors } = this.batchPaint([serializedRange]);
     if (errors[0]) {
       throw errors[0];
     }
@@ -358,22 +362,26 @@ class Marker {
 
     for (let i = 0; i < serializedRanges.length; i++) {
       try {
-        this.state.uidToSerializedRange[serializedRanges[i].uid] = serializedRanges[i];
+        this.state.uidToSerializedRange[serializedRanges[i].uid] =
+          serializedRanges[i];
         const offset = this.resolveSerializedRangeOffsetInText(
-            rootText,
-            serializedRanges[i]
+          rootText,
+          serializedRanges[i]
         );
         const start = this.findElementAtOffset(this.rootElement, offset);
         const end = this.findElementAtOffset(
-            this.rootElement,
-            offset + Marker.normalizeText(serializedRanges[i].text).length
+          this.rootElement,
+          offset + Marker.normalizeText(serializedRanges[i].text).length
         );
         const range = this.document.createRange();
         range.setStart(
-            start.element,
-            Marker.getRealOffset(start.element, start.offset)
+          start.element,
+          Marker.getRealOffset(start.element, start.offset)
         );
-        range.setEnd(end.element, Marker.getRealOffset(end.element, end.offset));
+        range.setEnd(
+          end.element,
+          Marker.getRealOffset(end.element, end.offset)
+        );
         this.trimRangeSpaces(range);
         results[i] = range;
       } catch (ex) {
@@ -382,11 +390,11 @@ class Marker {
     }
 
     this.document.head.removeChild(blackListedElementStyle);
-    return {results, errors}
+    return { results, errors };
   }
 
   public deserializeRange(serializedRange: SerializedRange) {
-    const {results, errors} = this.batchDeserializeRange([serializedRange]);
+    const { results, errors } = this.batchDeserializeRange([serializedRange]);
     if (errors[0]) {
       throw errors[0];
     }
@@ -451,10 +459,7 @@ class Marker {
       this.highlightPainter.beforePaintHighlight(context);
     }
     for (let element of this.resolveHighlightElements(highlightId)) {
-      this.highlightPainter.paintHighlight(
-          context,
-          element
-      );
+      this.highlightPainter.paintHighlight(context, element);
     }
     if (this.highlightPainter.afterPaintHighlight) {
       this.highlightPainter.afterPaintHighlight(context);
