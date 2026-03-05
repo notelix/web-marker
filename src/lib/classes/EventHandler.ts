@@ -8,6 +8,7 @@ interface EventHandler {
     hovering: boolean,
     e: Event
   ) => void;
+  onHighlightDeleted?: (context: Context) => void;
 }
 
 export default EventHandler;

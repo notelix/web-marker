@@ -339,6 +339,7 @@ class IframeRender extends React.Component {
     const doAnnotate = () => {
       if (!this.selectedHighlightId) {
         const result = doHighlight();
+        if (!result) return;
         this.selectedHighlightId = result.uid;
       }
       let selectedHighlightId = this.selectedHighlightId;

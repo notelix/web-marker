@@ -17,6 +17,7 @@ interface MarkerConstructorArgs {
   rootElement?: HTMLElement;
   eventHandler?: EventHandler;
   highlightPainter?: HighlightPainter;
+  overlappingHighlight?: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight";
 }
 
 const defaultHighlightPainter: HighlightPainter = {
@@ -48,6 +49,7 @@ class Marker {
   window: Window;
   eventHandler: EventHandler;
   highlightPainter: HighlightPainter;
+  overlappingHighlight: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight";
   state = {
     lastHoverId: "",
     uidToSerializedRange: {} as { [key: string]: SerializedRange },
@@ -57,12 +59,14 @@ class Marker {
     rootElement,
     highlightPainter,
     eventHandler,
+    overlappingHighlight,
   }: MarkerConstructorArgs) {
     this.rootElement = rootElement || document.body;
     this.document = this.rootElement.getRootNode() as Document;
     this.window = this.document.defaultView as Window;
     this.highlightPainter = highlightPainter || defaultHighlightPainter;
     this.eventHandler = eventHandler || defaultEventHandler;
+    this.overlappingHighlight = overlappingHighlight || "allow";
   }
 
   public static clearSelection(win: Window = window) {
@@ -165,6 +169,28 @@ class Marker {
     return selection;
   }
 
+  private getOverlappingHighlightIds(range: Range): string[] {
+    const overlappingIds = new Set<string>();
+
+    if (range.collapsed) {
+      return [];
+    }
+
+    const elements = Array.from(
+      this.document.getElementsByTagName(HighlightTagName)
+    );
+    for (const el of elements) {
+      if (range.intersectsNode(el)) {
+        const id = el.getAttribute(AttributeNameHighlightId);
+        if (id) {
+          overlappingIds.add(id);
+        }
+      }
+    }
+
+    return Array.from(overlappingIds);
+  }
+
   public serializeRange(
     range: Range,
     options: { uid?: string; charsToKeepForTextBeforeAndTextAfter?: number } = {
@@ -177,6 +203,14 @@ class Marker {
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
+
+      if (this.overlappingHighlight === "dontCreateNewHighlight") {
+        const overlappedIds = this.getOverlappingHighlightIds(range);
+        if (overlappedIds.length > 0) {
+          return null;
+        }
+      }
+
       const uid = options?.uid || makeid();
       const charsToKeepForTextBeforeAndTextAfter =
         options?.charsToKeepForTextBeforeAndTextAfter ||
@@ -265,9 +299,46 @@ class Marker {
       }
 
       const uid = serializedRanges[i].uid;
-      const range = deserializedRanges[i];
+      let range = deserializedRanges[i];
 
       if (!range.collapsed) {
+        if (this.overlappingHighlight !== "allow") {
+          const overlappedIds = this.getOverlappingHighlightIds(range);
+          if (overlappedIds.length > 0) {
+            if (this.overlappingHighlight === "dontCreateNewHighlight") {
+              errors[i] = new Error("overlapping highlight detected");
+              continue;
+            } else if (
+              this.overlappingHighlight === "deleteOverlappedHighlight"
+            ) {
+              for (const id of overlappedIds) {
+                if (id === uid) continue;
+                const serializedToUnpaint = this.state.uidToSerializedRange[id];
+                if (serializedToUnpaint) {
+                  const context = this.buildContext(id);
+                  this.unpaint(serializedToUnpaint);
+                  if (this.eventHandler.onHighlightDeleted) {
+                    this.eventHandler.onHighlightDeleted(context);
+                  }
+                  delete this.state.uidToSerializedRange[id];
+                } else {
+                  for (const element of this.resolveHighlightElements(id)) {
+                    Marker.unpaintElement(element);
+                  }
+                }
+              }
+
+              // Re-deserialize the range after DOM changes from unpainting
+              try {
+                range = this.deserializeRange(serializedRanges[i]);
+              } catch (ex) {
+                errors[i] = ex;
+                continue;
+              }
+            }
+          }
+        }
+
         const setElementHighlightIdAttribute = (element: HTMLElement) => {
           element.setAttribute(AttributeNameHighlightId, uid);
         };
