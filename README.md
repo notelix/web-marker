@@ -62,14 +62,14 @@ document.addEventListener('mouseup', (e) => {
 
 ## Overlapping Highlight Handling
 
-The library supports three modes for handling overlapping highlights:
+The library supports four modes for handling overlapping highlights:
 
 ### Configuration
 
 ```javascript
 const marker = new Marker({
     rootElement: document.body,
-    overlappingHighlight: 'dontCreateNewHighlight', // or 'deleteOverlappedHighlight' or 'allow' (default)
+    overlappingHighlight: 'merge', // or 'dontCreateNewHighlight', 'deleteOverlappedHighlight', or 'allow' (default)
     eventHandler: {
         onHighlightDeleted: (context) => {
             // Called when a highlight is automatically deleted due to overlap
@@ -121,6 +121,32 @@ const marker = new Marker({
         }
     }
 });
+```
+
+**`"merge"`**
+- Automatically expands the selection to encompass all overlapping highlights
+- Creates one unified highlight that covers the entire merged range
+- Existing overlapping highlights are removed and `onHighlightDeleted` is called for each
+- The user's selection visually "snaps" outward to show the merged boundaries
+- Useful for combining adjacent or overlapping annotations into a single continuous highlight
+
+```javascript
+const highlights = {};
+
+const marker = new Marker({
+    overlappingHighlight: 'merge',
+    eventHandler: {
+        onHighlightDeleted: (context) => {
+            // Clean up the old fragments that were merged
+            const uid = context.serializedRange.uid;
+            delete highlights[uid];
+            localStorage.setItem('highlights', JSON.stringify(highlights));
+        }
+    }
+});
+
+// When user creates a highlight that overlaps existing ones,
+// it will automatically expand to cover all overlapping highlights
 ```
 
 # How to build library

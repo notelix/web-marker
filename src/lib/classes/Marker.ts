@@ -17,7 +17,7 @@ interface MarkerConstructorArgs {
   rootElement?: HTMLElement;
   eventHandler?: EventHandler;
   highlightPainter?: HighlightPainter;
-  overlappingHighlight?: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight";
+  overlappingHighlight?: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight" | "merge";
 }
 
 const defaultHighlightPainter: HighlightPainter = {
@@ -49,7 +49,7 @@ class Marker {
   window: Window;
   eventHandler: EventHandler;
   highlightPainter: HighlightPainter;
-  overlappingHighlight: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight";
+  overlappingHighlight: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight" | "merge";
   state = {
     lastHoverId: "",
     uidToSerializedRange: {} as { [key: string]: SerializedRange },
@@ -209,6 +209,46 @@ class Marker {
         if (overlappedIds.length > 0) {
           return null;
         }
+      } else if (this.overlappingHighlight === "merge") {
+        let expanded = true;
+        const mergedIds = new Set<string>();
+
+        // Iteratively expand boundaries outward until no new overlaps are found
+        while (expanded) {
+          expanded = false;
+          const overlappedIds = this.getOverlappingHighlightIds(range);
+          for (const id of overlappedIds) {
+            if (!mergedIds.has(id)) {
+              mergedIds.add(id);
+              expanded = true;
+
+              const elements = this.resolveHighlightElements(id);
+              if (elements.length > 0) {
+                const firstEl = elements[0];
+                const lastEl = elements[elements.length - 1];
+
+                const firstTextNode = this.findFirstChildTextNode(firstEl);
+                if (firstTextNode) {
+                  const startRange = this.document.createRange();
+                  startRange.setStart(firstTextNode, 0);
+                  if (range.compareBoundaryPoints(Range.START_TO_START, startRange) > 0) {
+                    range.setStart(firstTextNode, 0);
+                  }
+                }
+
+                const lastTextNode = this.findLastChildTextNode(lastEl);
+                if (lastTextNode) {
+                  const endRange = this.document.createRange();
+                  const endOffset = lastTextNode.textContent?.length || 0;
+                  endRange.setEnd(lastTextNode, endOffset);
+                  if (range.compareBoundaryPoints(Range.END_TO_END, endRange) < 0) {
+                    range.setEnd(lastTextNode, endOffset);
+                  }
+                }
+              }
+            }
+          }
+        }
       }
 
       const uid = options?.uid || makeid();
@@ -309,7 +349,8 @@ class Marker {
               errors[i] = new Error("overlapping highlight detected");
               continue;
             } else if (
-              this.overlappingHighlight === "deleteOverlappedHighlight"
+              this.overlappingHighlight === "deleteOverlappedHighlight" ||
+              this.overlappingHighlight === "merge"
             ) {
               for (const id of overlappedIds) {
                 if (id === uid) continue;
