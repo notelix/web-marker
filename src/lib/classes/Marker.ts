@@ -162,6 +162,103 @@ class Marker {
     element.parentNode?.removeChild(element);
   }
 
+  private describeNode(node: Node | null) {
+    if (!node) {
+      return null;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      return {
+        nodeType: "text",
+        textContent: node.textContent,
+      };
+    }
+
+    const element = node as HTMLElement;
+    return {
+      nodeType: "element",
+      tagName: element.tagName,
+      className: element.className || "",
+      textContent: element.textContent,
+    };
+  }
+
+  private logBoundaryAdjustment(input: {
+    direction: "start" | "end";
+    from: { element: Node; offset: number };
+    to: { element: Node; offset: number };
+    serializedRange: SerializedRange;
+  }) {
+    console.log(
+      "[web-marker] adjusted deserialized boundary",
+      JSON.stringify({
+        direction: input.direction,
+        serializedRange: input.serializedRange,
+        from: {
+          offset: input.from.offset,
+          node: this.describeNode(input.from.element),
+        },
+        to: {
+          offset: input.to.offset,
+          node: this.describeNode(input.to.element),
+        },
+      })
+    );
+  }
+
+  private normalizeDeserializedBoundary(
+    boundary: { element: Node; offset: number },
+    direction: "start" | "end",
+    serializedRange: SerializedRange
+  ) {
+    if (direction !== "start") {
+      return boundary;
+    }
+
+    let { element, offset } = boundary;
+    const original = boundary;
+
+    while (this.getNormalizedInnerText(element).length === 0) {
+      const next = this.findNextTextNodeInDomTree(element);
+      if (!next) {
+        return boundary;
+      }
+      element = next;
+      offset = 0;
+    }
+
+    const normalizedLength = this.getNormalizedInnerText(element).length;
+    if (offset === normalizedLength) {
+      let next = this.findNextTextNodeInDomTree(element);
+      while (next && this.getNormalizedInnerText(next).length === 0) {
+        next = this.findNextTextNodeInDomTree(next);
+      }
+      if (next) {
+        const adjusted = { element: next, offset: 0 };
+        this.logBoundaryAdjustment({
+          direction,
+          from: original,
+          to: adjusted,
+          serializedRange,
+        });
+        return adjusted;
+      }
+    }
+
+    if (element !== original.element || offset !== original.offset) {
+      const adjusted = { element, offset };
+      this.logBoundaryAdjustment({
+        direction,
+        from: original,
+        to: adjusted,
+        serializedRange,
+      });
+      return adjusted;
+    }
+
+    return boundary;
+  }
+
   private convertRangeToSelection(range: Range) {
     const selection = this.window.getSelection() as any;
     selection.removeAllRanges();
@@ -480,7 +577,11 @@ class Marker {
           rootText,
           serializedRanges[i]
         );
-        const start = this.findElementAtOffset(this.rootElement, offset);
+        const start = this.normalizeDeserializedBoundary(
+          this.findElementAtOffset(this.rootElement, offset),
+          "start",
+          serializedRanges[i]
+        );
         const end = this.findElementAtOffset(
           this.rootElement,
           offset + Marker.normalizeText(serializedRanges[i].text).length
