@@ -8,13 +8,11 @@
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
     "build-lib": "BUILD_TARGET=lib react-app-rewired build",
-    "prepublish": "NO_BUNDLE_ANALYSER=true npm run build-lib; tsc -p tsconfig.gen-dts.json",
-    "test": "react-app-rewired test",
+    "prepublishOnly": "npm run build-lib && tsc -p tsconfig.gen-dts.json",
+    "test": "react-app-rewired test --watchAll=false",
     "eject": "react-app-rewired eject"
   },
-  "dependencies": {
-    "uuid": "^8.3.2"
-  },
+  "dependencies": {},
   "homepage": "https://github.com/notelix/web-marker",
   "repository": {
     "type": "git",
@@ -22,23 +20,33 @@
   },
   "devDependencies": {
     "@material-ui/core": "^4.11.0",
+    "@types/jest": "^27.5.2",
     "@types/react-dom": "^17.0.9",
-    "@types/uuid": "^8.3.1",
     "bulma": "^0.9.1",
-    "copy-webpack-plugin": "6",
-    "lodash-es": "^4.17.15",
+    "lodash-es": "^4.17.21",
     "markdown-to-jsx": "^7.0.1",
     "raw-loader": "^4.0.1",
+    "prop-types": "^15.8.1",
     "react": "^17.0.0",
-    "react-app-rewired": "^2.1.6",
+    "react-app-rewired": "^2.2.1",
     "react-dom": "^17.0.0",
-    "react-katex": "^2.0.2",
-    "react-scripts": "^3.4.1",
+    "react-katex": "^3.1.0",
+    "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^15.3.0",
     "sass": "^1.38.0",
-    "typescript": "^4.0.5",
-    "webpack-bundle-analyzer": "^4.4.2",
+    "typescript": "^4.9.5",
+    "uuid": "^11.1.0",
+    "webpack": "^5.109.2",
+    "webpack-bundle-analyzer": "^5.3.2",
     "yaml": "^1.10.0"
+  },
+  "files": [
+    "build/web-marker.js",
+    "build/web-marker.js.map",
+    "build/**/*.d.ts"
+  ],
+  "engines": {
+    "node": ">=20"
   },
   "keywords": [
     "web",

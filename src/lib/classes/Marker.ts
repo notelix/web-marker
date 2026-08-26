@@ -9,31 +9,30 @@ import DeserializationError from "./errors/DeserializationError";
 const HighlightTagName = "web-marker-highlight";
 const HighlightBlacklistedElementClassName = "web-marker-black-listed-element";
 const AttributeNameHighlightId = "highlight-id";
+const RangeStartToStart = 0;
+const RangeEndToEnd = 2;
 
 const defaultCharsToKeepForTextBeforeAndTextAfter = 128;
-const blackListedElementStyle = document.createElement("style");
-blackListedElementStyle.innerText = `.${HighlightBlacklistedElementClassName}, .MJX_Assistive_MathML>math>*, math>semantics>* {display:none!important;};`;
+const blackListedElementCss = `.${HighlightBlacklistedElementClassName}, .MJX_Assistive_MathML>math>*, math>semantics>* {display:none!important;};`;
 interface MarkerConstructorArgs {
   rootElement?: HTMLElement;
   eventHandler?: EventHandler;
   highlightPainter?: HighlightPainter;
-  overlappingHighlight?: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight" | "merge";
+  debug?: boolean;
+  overlappingHighlight?:
+    "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight" | "merge";
 }
 
 const defaultHighlightPainter: HighlightPainter = {
-  paintHighlight: (context: Context, element: HTMLElement) => {
-    console.log("paintHighlight", context, element);
+  paintHighlight: (_context: Context, element: HTMLElement) => {
     element.style.textDecoration = "underline";
     element.style.textDecorationColor = "orange";
   },
 };
 
 const defaultEventHandler: EventHandler = {
-  onHighlightClick: (context, element) => {
-    console.log("onHighlightClick", context, element);
-  },
-  onHighlightHoverStateChange: (context, element, hovering) => {
-    console.log("onHighlightHoverStateChange", context, element);
+  onHighlightClick: () => {},
+  onHighlightHoverStateChange: (_context, element, hovering) => {
     if (hovering) {
       element.style.backgroundColor = "#FFE49C";
     } else {
@@ -43,13 +42,16 @@ const defaultEventHandler: EventHandler = {
 };
 
 class Marker {
-  public static normalizeTextCache = {} as any;
+  private static normalizeTextCache = new Map<string, string>();
+  private static readonly normalizeTextCacheLimit = 1000;
   rootElement: Element;
   document: Document;
   window: Window;
   eventHandler: EventHandler;
   highlightPainter: HighlightPainter;
-  overlappingHighlight: "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight" | "merge";
+  overlappingHighlight:
+    "allow" | "dontCreateNewHighlight" | "deleteOverlappedHighlight" | "merge";
+  debug: boolean;
   state = {
     lastHoverId: "",
     uidToSerializedRange: {} as { [key: string]: SerializedRange },
@@ -60,17 +62,31 @@ class Marker {
     highlightPainter,
     eventHandler,
     overlappingHighlight,
+    debug,
   }: MarkerConstructorArgs) {
+    if (!rootElement && typeof document === "undefined") {
+      throw new Error("rootElement is required outside a browser document");
+    }
     this.rootElement = rootElement || document.body;
-    this.document = this.rootElement.getRootNode() as Document;
-    this.window = this.document.defaultView as Window;
+    this.document = this.rootElement.ownerDocument;
+    const ownerWindow = this.document.defaultView;
+    if (!ownerWindow) {
+      throw new Error("rootElement must belong to a document with a window");
+    }
+    this.window = ownerWindow;
     this.highlightPainter = highlightPainter || defaultHighlightPainter;
     this.eventHandler = eventHandler || defaultEventHandler;
     this.overlappingHighlight = overlappingHighlight || "allow";
+    this.debug = debug || false;
   }
 
-  public static clearSelection(win: Window = window) {
-    const selection = win.getSelection();
+  public static clearSelection(win?: Window) {
+    const ownerWindow =
+      win || (typeof window === "undefined" ? undefined : window);
+    if (!ownerWindow) {
+      return;
+    }
+    const selection = ownerWindow.getSelection();
     if (!selection) {
       return;
     }
@@ -84,7 +100,7 @@ class Marker {
   private resolveHighlightElements(highlightId: string): HTMLElement[] {
     let elements: HTMLElement[] = [];
     for (let item of Array.from(
-      this.document.getElementsByTagName(HighlightTagName)
+      this.document.getElementsByTagName(HighlightTagName),
     )) {
       if (item.getAttribute(AttributeNameHighlightId) === highlightId) {
         elements.push(item as HTMLElement);
@@ -94,20 +110,31 @@ class Marker {
   }
 
   private static normalizeText(s: string) {
-    if (!Marker.normalizeTextCache[s]) {
-      Marker.normalizeTextCache[s] = s.replace(/\s/g, "").toLowerCase();
+    const cached = Marker.normalizeTextCache.get(s);
+    if (cached !== undefined) {
+      return cached;
     }
-    return Marker.normalizeTextCache[s];
+
+    if (Marker.normalizeTextCache.size >= Marker.normalizeTextCacheLimit) {
+      Marker.normalizeTextCache.clear();
+    }
+    const normalized = s.replace(/\s/g, "").toLowerCase();
+    Marker.normalizeTextCache.set(s, normalized);
+    return normalized;
   }
 
   private static isBlackListedElementNode(element: Node | null) {
     if (!element) {
       return false;
     }
-    if (element.nodeType !== Node.ELEMENT_NODE) {
+    if (element.nodeType !== 1) {
       return false;
     }
-    const computedStyle = getComputedStyle(element as any);
+    const ownerWindow = element.ownerDocument?.defaultView;
+    if (!ownerWindow) {
+      return false;
+    }
+    const computedStyle = ownerWindow.getComputedStyle(element as Element);
     if (computedStyle.display === "none") {
       return true;
     }
@@ -167,7 +194,7 @@ class Marker {
       return null;
     }
 
-    if (node.nodeType === Node.TEXT_NODE) {
+    if (node.nodeType === 3) {
       return {
         nodeType: "text",
         textContent: node.textContent,
@@ -189,6 +216,9 @@ class Marker {
     to: { element: Node; offset: number };
     serializedRange: SerializedRange;
   }) {
+    if (!this.debug) {
+      return;
+    }
     console.log(
       "[web-marker] adjusted deserialized boundary",
       JSON.stringify({
@@ -202,14 +232,14 @@ class Marker {
           offset: input.to.offset,
           node: this.describeNode(input.to.element),
         },
-      })
+      }),
     );
   }
 
   private normalizeDeserializedBoundary(
     boundary: { element: Node; offset: number },
     direction: "start" | "end",
-    serializedRange: SerializedRange
+    serializedRange: SerializedRange,
   ) {
     if (direction !== "start") {
       return boundary;
@@ -266,6 +296,14 @@ class Marker {
     return selection;
   }
 
+  private attachBlackListedElementStyle(): HTMLStyleElement {
+    const style = this.document.createElement("style");
+    style.textContent = blackListedElementCss;
+    const parent = this.document.head || this.document.documentElement;
+    parent.appendChild(style);
+    return style;
+  }
+
   private getOverlappingHighlightIds(range: Range): string[] {
     const overlappingIds = new Set<string>();
 
@@ -274,7 +312,7 @@ class Marker {
     }
 
     const elements = Array.from(
-      this.document.getElementsByTagName(HighlightTagName)
+      this.document.getElementsByTagName(HighlightTagName),
     );
     for (const el of elements) {
       if (range.intersectsNode(el)) {
@@ -294,9 +332,9 @@ class Marker {
       uid: undefined,
       charsToKeepForTextBeforeAndTextAfter:
         defaultCharsToKeepForTextBeforeAndTextAfter,
-    }
+    },
   ): SerializedRange | null {
-    this.document.head.appendChild(blackListedElementStyle);
+    const blackListedElementStyle = this.attachBlackListedElementStyle();
 
     try {
       this.adjustRangeAroundBlackListedElement(range);
@@ -328,7 +366,10 @@ class Marker {
                 if (firstTextNode) {
                   const startRange = this.document.createRange();
                   startRange.setStart(firstTextNode, 0);
-                  if (range.compareBoundaryPoints(Range.START_TO_START, startRange) > 0) {
+                  if (
+                    range.compareBoundaryPoints(RangeStartToStart, startRange) >
+                    0
+                  ) {
                     range.setStart(firstTextNode, 0);
                   }
                 }
@@ -338,7 +379,9 @@ class Marker {
                   const endRange = this.document.createRange();
                   const endOffset = lastTextNode.textContent?.length || 0;
                   endRange.setEnd(lastTextNode, endOffset);
-                  if (range.compareBoundaryPoints(Range.END_TO_END, endRange) < 0) {
+                  if (
+                    range.compareBoundaryPoints(RangeEndToEnd, endRange) < 0
+                  ) {
                     range.setEnd(lastTextNode, endOffset);
                   }
                 }
@@ -366,7 +409,7 @@ class Marker {
             textBefore +
             this.getInnerText(range.startContainer).substr(
               0,
-              range.startOffset
+              range.startOffset,
             );
 
           let ptr = range.startContainer as Node | null;
@@ -380,7 +423,7 @@ class Marker {
           }
           if (textBefore.length > charsToKeepForTextBeforeAndTextAfter) {
             textBefore = textBefore.substr(
-              textBefore.length - charsToKeepForTextBeforeAndTextAfter
+              textBefore.length - charsToKeepForTextBeforeAndTextAfter,
             );
           }
         }
@@ -404,7 +447,7 @@ class Marker {
           if (textAfter.length > charsToKeepForTextBeforeAndTextAfter) {
             textAfter = textAfter.substr(
               0,
-              charsToKeepForTextBeforeAndTextAfter
+              charsToKeepForTextBeforeAndTextAfter,
             );
           }
         }
@@ -420,7 +463,7 @@ class Marker {
 
       return null;
     } finally {
-      this.document.head.removeChild(blackListedElementStyle);
+      blackListedElementStyle.parentNode?.removeChild(blackListedElementStyle);
     }
   }
 
@@ -489,11 +532,11 @@ class Marker {
               }
               // special case
               const word = (<Text>range.startContainer).splitText(
-                range.startOffset
+                range.startOffset,
               );
               word.splitText(range.endOffset);
               setElementHighlightIdAttribute(
-                this.convertTextNodeToHighlightElement(word)
+                this.convertTextNodeToHighlightElement(word),
               );
 
               return;
@@ -501,7 +544,7 @@ class Marker {
 
             const toPaint = [];
             let ptr = (<Text>range.startContainer).splitText(
-              range.startOffset
+              range.startOffset,
             ) as Node | null;
             toPaint.push(ptr);
 
@@ -525,7 +568,7 @@ class Marker {
                 if (!decoratedElement.innerText) {
                   decoratedElement.parentElement?.insertBefore(
                     item,
-                    decoratedElement.nextSibling
+                    decoratedElement.nextSibling,
                   );
                   decoratedElement.parentElement?.removeChild(decoratedElement);
                 }
@@ -561,10 +604,11 @@ class Marker {
     for (let element of this.resolveHighlightElements(id)) {
       Marker.unpaintElement(element);
     }
+    delete this.state.uidToSerializedRange[id];
   }
 
   private batchDeserializeRange(serializedRanges: SerializedRange[]) {
-    this.document.head.appendChild(blackListedElementStyle);
+    const blackListedElementStyle = this.attachBlackListedElementStyle();
     const results = {} as any;
     const errors = {} as any;
     const rootText = this.getNormalizedInnerText(this.rootElement);
@@ -575,25 +619,25 @@ class Marker {
           serializedRanges[i];
         const offset = this.resolveSerializedRangeOffsetInText(
           rootText,
-          serializedRanges[i]
+          serializedRanges[i],
         );
         const start = this.normalizeDeserializedBoundary(
           this.findElementAtOffset(this.rootElement, offset),
           "start",
-          serializedRanges[i]
+          serializedRanges[i],
         );
         const end = this.findElementAtOffset(
           this.rootElement,
-          offset + Marker.normalizeText(serializedRanges[i].text).length
+          offset + Marker.normalizeText(serializedRanges[i].text).length,
         );
         const range = this.document.createRange();
         range.setStart(
           start.element,
-          Marker.getRealOffset(start.element, start.offset)
+          Marker.getRealOffset(start.element, start.offset),
         );
         range.setEnd(
           end.element,
-          Marker.getRealOffset(end.element, end.offset)
+          Marker.getRealOffset(end.element, end.offset),
         );
         this.trimRangeSpaces(range);
         results[i] = range;
@@ -602,7 +646,7 @@ class Marker {
       }
     }
 
-    this.document.head.removeChild(blackListedElementStyle);
+    blackListedElementStyle.parentNode?.removeChild(blackListedElementStyle);
     return { results, errors };
   }
 
@@ -653,7 +697,7 @@ class Marker {
     this.rootElement.addEventListener(
       "mouseover",
       this.mouseoverListener,
-      true
+      true,
     );
   }
 
@@ -662,7 +706,7 @@ class Marker {
     this.rootElement.removeEventListener(
       "mouseover",
       this.mouseoverListener,
-      true
+      true,
     );
   }
 
@@ -686,7 +730,7 @@ class Marker {
           this.buildContext(highlightId),
           element as any,
           hovering,
-          e
+          e,
         );
       }
     }
@@ -696,7 +740,7 @@ class Marker {
     if (Marker.isBlackListedElementNode(element)) {
       return "";
     }
-    if (element.nodeType === Node.TEXT_NODE) {
+    if (element.nodeType === 3) {
       return element.textContent;
     } else {
       if (typeof (element as any).innerText === "undefined") {
@@ -719,7 +763,7 @@ class Marker {
     if (!node) {
       return null;
     }
-    if (node.nodeType === Node.TEXT_NODE) {
+    if (node.nodeType === 3) {
       return node;
     }
     if (node.childNodes) {
@@ -737,7 +781,7 @@ class Marker {
   }
 
   private findFirstChildTextNode(node: Node): Node | null {
-    if (node.nodeType === Node.TEXT_NODE) {
+    if (node.nodeType === 3) {
       return node;
     }
     if (node.childNodes) {
@@ -761,7 +805,7 @@ class Marker {
       }
       while (ptr?.previousSibling) {
         const candidate = this.findLastChildTextNode(
-          ptr?.previousSibling || null
+          ptr?.previousSibling || null,
         );
         if (candidate) {
           return candidate;
@@ -798,7 +842,7 @@ class Marker {
 
   private forwardOffset(
     { element, offset }: { element: Node; offset: number },
-    toMove: number
+    toMove: number,
   ): { element: Node; offset: number } {
     const elementText = this.getNormalizedInnerText(element);
     if (elementText.length > toMove + offset) {
@@ -812,7 +856,7 @@ class Marker {
             element: nextTextNode,
             offset: 0,
           },
-          toMove - (elementText.length - offset)
+          toMove - (elementText.length - offset),
         );
       } else {
         offset = this.getInnerText(element);
@@ -823,7 +867,7 @@ class Marker {
 
   private backwardOffset(
     { element, offset }: { element: Node; offset: number },
-    toMove: number
+    toMove: number,
   ): { element: Node; offset: number } {
     if (offset >= toMove) {
       offset -= toMove;
@@ -836,7 +880,7 @@ class Marker {
             element: previousTextNode,
             offset: this.getNormalizedInnerText(previousTextNode).length,
           },
-          toMove - offset
+          toMove - offset,
         );
       } else {
         offset = 0;
@@ -847,9 +891,9 @@ class Marker {
 
   private findElementAtOffset(
     root: Node,
-    offset: number
+    offset: number,
   ): { element: Node; offset: number } {
-    if (root.nodeType === Node.TEXT_NODE) {
+    if (root.nodeType === 3) {
       return { element: root as Text, offset: offset };
     } else {
       let cumulativeOffset = 0;
@@ -858,7 +902,7 @@ class Marker {
           continue;
         }
         const childSize = this.getNormalizedInnerText(
-          root.childNodes[i]
+          root.childNodes[i],
         ).length;
         cumulativeOffset += childSize;
         if (cumulativeOffset < offset) {
@@ -866,7 +910,7 @@ class Marker {
         }
         return this.findElementAtOffset(
           root.childNodes[i],
-          offset - (cumulativeOffset - childSize)
+          offset - (cumulativeOffset - childSize),
         );
       }
       throw new Error("failed to findElementAtOffset");
@@ -875,19 +919,19 @@ class Marker {
 
   private trimRangeSpaces(range: Range) {
     let start = this.getInnerText(range.startContainer).substr(
-      range.startOffset
+      range.startOffset,
     );
     let startTrimmed = start.trimStart();
     range.setStart(
       range.startContainer,
-      range.startOffset + (start.length - startTrimmed.length)
+      range.startOffset + (start.length - startTrimmed.length),
     );
 
     let end = this.getInnerText(range.endContainer).substr(0, range.endOffset);
     let endTrimmed = end.trimEnd();
     range.setEnd(
       range.endContainer,
-      range.endOffset - (end.length - endTrimmed.length)
+      range.endOffset - (end.length - endTrimmed.length),
     );
   }
 
@@ -935,14 +979,14 @@ class Marker {
     if (blacklistedParentOfStartContainer) {
       range.setStart(
         this.findNextTextNodeInDomTree(
-          blacklistedParentOfStartContainer
+          blacklistedParentOfStartContainer,
         ) as any,
-        0
+        0,
       );
     }
     if (blacklistedParentOfEndContainer) {
       let prevNode = this.findPreviousTextNodeInDomTree(
-        blacklistedParentOfEndContainer
+        blacklistedParentOfEndContainer,
       ) as any;
       range.setEnd(prevNode, this.getInnerText(prevNode).length);
     }
@@ -954,11 +998,11 @@ class Marker {
 
   resolveSerializedRangeOffsetInText(
     text: any,
-    serializedRange: SerializedRange
+    serializedRange: SerializedRange,
   ): number {
     // TODO: optimize algorithm, maybe use https://github.com/google/diff-match-patch
     const textBeforeNormalized = Marker.normalizeText(
-      serializedRange.textBefore
+      serializedRange.textBefore,
     );
     const textAfterNormalized = Marker.normalizeText(serializedRange.textAfter);
     const textNormalized = Marker.normalizeText(serializedRange.text);

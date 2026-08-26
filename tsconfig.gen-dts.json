@@ -4,10 +4,7 @@
     "emitDeclarationOnly": true,
     "outDir": "build/",
     "jsx": "react",
-    "lib": [
-      "es2017",
-      "dom"
-    ],
+    "lib": ["es2017", "dom"],
     "module": "commonjs",
     "moduleResolution": "node",
     "skipLibCheck": true,
@@ -15,9 +12,6 @@
     "strictNullChecks": false,
     "target": "es5"
   },
-  "include": [
-    "./src/libroot.ts",
-    "./src/lib/*",
-    "./src/lib/**/*"
-  ]
+  "include": ["./src/libroot.ts", "./src/lib/*", "./src/lib/**/*"],
+  "exclude": ["./src/**/*.test.ts", "./src/**/*.test.tsx"]
 }
