@@ -1,0 +1,19 @@
+{
+  "name": "web-marker-cdp-smoke",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node smoke.mjs"
+  },
+  "dependencies": {
+    "@notelix/web-marker": "2.0.11"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

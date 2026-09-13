@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><link rel="icon" href="data:," /><title>web-marker npm smoke test</title>
+  <style>
+    body {
+      font:
+        17px system-ui,
+        sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 24px;
+      background: #f5f7fa;
+      color: #172130;
+    }
+    h1 {
+      font-size: 27px;
+    }
+    article {
+      padding: 22px;
+      background: white;
+      border: 1px solid #ccd4df;
+      border-radius: 9px;
+      margin: 20px 0;
+      font: 26px/1.9 sans-serif;
+    }
+    button,
+    select {
+      font: inherit;
+      padding: 9px 13px;
+      margin: 4px;
+      border-radius: 6px;
+      border: 1px solid #a5b2c2;
+      background: white;
+    }
+    button {
+      cursor: pointer;
+    }
+    iframe {
+      width: 100%;
+      height: 150px;
+      border: 1px solid #ccd4df;
+      background: white;
+    }
+    pre {
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+    #status {
+      min-height: 25px;
+      color: #256343;
+    }
+  </style>
+  <h1>web-marker · npm browser smoke test</h1>
+  <p id="version"></p>
+  <p>拖动选择一个或多个汉字，然后点击“高亮”。点击高亮文字可删除标记。</p>
+  <select id="mode">
+    <option value="allow">Allow overlap</option>
+    <option value="merge">Merge overlap</option>
+    <option value="dontCreateNewHighlight">Reject overlap</option>
+    <option value="deleteOverlappedHighlight">Replace overlap</option>
+  </select>
+  <button id="paint">高亮 / Highlight</button
+  ><button id="save">保存 / Save</button
+  ><button id="restore">恢复 / Restore</button
+  ><button id="clear">清除 / Clear</button>
+  <p id="status" role="status">Ready</p>
+  <article id="reader">
+    <p id="plain">春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。</p>
+    <p id="mixed">
+      中文阅读：<em>选择汉字</em>，跨越<strong>行内元素</strong>也应保持准确。𠮷野家与😀表情。
+    </p>
+    <p id="edge">__proto__</p>
+  </article>
+  <h2>Iframe document</h2>
+  <iframe
+    id="frame"
+    title="Chinese iframe"
+    srcdoc="<!doctype html><meta charset='utf-8'><style>body{font:26px/1.9 sans-serif;margin:20px}</style><p id='frameText'>独立文档中的中文选择与高亮。</p>"
+  ></iframe>
+  <pre id="serialized"></pre>
+  <script type="module" src="/bundle.js"></script>
+</html>

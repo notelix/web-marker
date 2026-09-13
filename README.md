@@ -158,3 +158,7 @@ npm pack
 # Built with web-marker
 
 * [notelix/notelix](https://github.com/notelix/notelix): An open source web note taking / highlighter software (chrome extension with backend)
+
+## Published npm package smoke test
+
+See [examples/npm-smoke](./examples/npm-smoke) for a standalone consumer app and a Chrome DevTools Protocol smoke test covering Chinese selection, iframe highlighting, persistence, and overlap policies.
