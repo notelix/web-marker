@@ -24,7 +24,7 @@
     "@types/react-dom": "^17.0.9",
     "bulma": "^0.9.1",
     "lodash-es": "^4.17.21",
-    "markdown-to-jsx": "^7.0.1",
+    "markdown-to-jsx": "^9.10.2",
     "raw-loader": "^4.0.1",
     "prop-types": "^15.8.1",
     "react": "^17.0.0",
